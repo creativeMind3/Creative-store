@@ -1,9 +1,29 @@
 import os
-
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from config import Config
+
+DEFAULT_SETTINGS = {
+    "store_name": "BIB-STORE",
+    "store_email": "",
+    "phone": "",
+    "whatsapp": "",
+    "address": "",
+    "logo": "",
+    "currency": "₦",
+    "description": "A modern online store for accessories, electronics and lifestyle products.",
+    "primary_color": "#6d4aff",
+    "announcement_text": "Fast & secure shopping • Easy ordering",
+    "show_announcement": "1",
+    "show_whatsapp": "1",
+    "whatsapp_message": "Hello {{store_name}}, I need help with my order #{{order_id}}.",
+    "footer_text": "Quality products, great prices and dependable customer service.",
+    "nav_home": "1",
+    "nav_shop": "1",
+    "nav_categories": "1",
+    "nav_about": "1",
+    "nav_contact": "1",
+}
 
 
 SCHEMA = """
@@ -20,8 +40,8 @@ CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     category TEXT NOT NULL,
-    price DOUBLE PRECISION NOT NULL CHECK(price >= 0),
-    stock INTEGER NOT NULL DEFAULT 0 CHECK(stock >= 0),
+    price DOUBLE PRECISION NOT NULL CHECK (price >= 0),
+    stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
     description TEXT NOT NULL DEFAULT '',
     image TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -34,11 +54,11 @@ CREATE TABLE IF NOT EXISTS orders (
     phone TEXT NOT NULL,
     address TEXT NOT NULL,
     note TEXT NOT NULL DEFAULT '',
-    total DOUBLE PRECISION NOT NULL CHECK(total >= 0),
+    total DOUBLE PRECISION NOT NULL CHECK (total >= 0),
     status TEXT NOT NULL DEFAULT 'Pending',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(user_id)
+    FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE RESTRICT
 );
@@ -48,14 +68,14 @@ CREATE TABLE IF NOT EXISTS order_items (
     order_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
     product_name TEXT NOT NULL,
-    price DOUBLE PRECISION NOT NULL CHECK(price >= 0),
-    quantity INTEGER NOT NULL CHECK(quantity > 0),
+    price DOUBLE PRECISION NOT NULL CHECK (price >= 0),
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
 
-    FOREIGN KEY(order_id)
+    FOREIGN KEY (order_id)
         REFERENCES orders(id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY(product_id)
+    FOREIGN KEY (product_id)
         REFERENCES products(id)
         ON DELETE RESTRICT
 );
@@ -67,39 +87,61 @@ CREATE TABLE IF NOT EXISTS settings (
 """
 
 
-DEFAULT_SETTINGS = {
-    "store_name": "BIB-STORE",
-    "store_email": "",
-    "phone": "",
-    "whatsapp": "",
-    "address": "",
-    "logo": "",
-    "currency": "₦",
+class CompatConnection:
+    """
+    Small compatibility layer so the existing app.py
+    can continue using SQLite-style ? placeholders.
+    """
 
-    "description":
-        "A modern online store for accessories, electronics and lifestyle products.",
+    def __init__(self, connection):
+        self.connection = connection
 
-    "primary_color": "#6d4aff",
+    def execute(self, query, params=()):
+        query = query.replace("?", "%s")
 
-    "announcement_text":
-        "Fast & secure shopping • Easy ordering",
+        cursor = self.connection.cursor(
+            cursor_factory=RealDictCursor
+        )
 
-    "show_announcement": "1",
+        cursor.execute(query, params)
 
-    "show_whatsapp": "1",
+        return CompatCursor(cursor, self.connection)
 
-    "whatsapp_message":
-        "Hello {{store_name}}, I need help with my order #{{order_id}}.",
+    def commit(self):
+        self.connection.commit()
 
-    "footer_text":
-        "Quality products, great prices and dependable customer service.",
+    def rollback(self):
+        self.connection.rollback()
 
-    "nav_home": "1",
-    "nav_shop": "1",
-    "nav_categories": "1",
-    "nav_about": "1",
-    "nav_contact": "1",
-}
+    def close(self):
+        self.connection.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            self.connection.rollback()
+        else:
+            self.connection.commit()
+
+        self.connection.close()
+
+
+class CompatCursor:
+    def __init__(self, cursor, connection):
+        self.cursor = cursor
+        self.connection = connection
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    @property
+    def lastrowid(self):
+        return self.cursor.fetchone()["id"] if False else None
 
 
 def get_database_url():
@@ -107,101 +149,136 @@ def get_database_url():
 
     if not database_url:
         raise RuntimeError(
-            "DATABASE_URL is not configured. "
-            "Add your Supabase PostgreSQL connection string "
-            "to Render Environment Variables."
+            "DATABASE_URL is missing. Add your Supabase PostgreSQL "
+            "connection string to Render Environment Variables."
         )
 
     return database_url
 
 
 def get_connection():
-    return psycopg2.connect(
+    connection = psycopg2.connect(
         get_database_url(),
-        cursor_factory=RealDictCursor,
-        sslmode="require",
+        sslmode="require"
     )
+
+    return CompatConnection(connection)
 
 
 def init_db():
 
-    with get_connection() as conn:
+    connection = psycopg2.connect(
+        get_database_url(),
+        sslmode="require"
+    )
 
-        with conn.cursor() as cur:
+    try:
+        cursor = connection.cursor(
+            cursor_factory=RealDictCursor
+        )
 
-            cur.execute(SCHEMA)
+        cursor.execute(SCHEMA)
 
-            for key, value in DEFAULT_SETTINGS.items():
+        for key, value in DEFAULT_SETTINGS.items():
 
-                cur.execute(
-                    """
-                    INSERT INTO settings(key, value)
-                    VALUES (%s, %s)
-                    ON CONFLICT (key) DO NOTHING
-                    """,
-                    (key, value)
-                )
-
-            cur.execute(
+            cursor.execute(
                 """
-                UPDATE settings
-                SET value = %s
-                WHERE key = 'announcement_text'
-                AND value LIKE 'Free delivery on orders over ₦50,000%%'
+                INSERT INTO settings(key, value)
+                VALUES (%s, %s)
+                ON CONFLICT (key) DO NOTHING
                 """,
-                (
-                    DEFAULT_SETTINGS["announcement_text"],
-                )
+                (key, value)
             )
 
-            cur.execute(
+        cursor.execute(
+            """
+            UPDATE settings
+            SET value = %s
+            WHERE key = 'announcement_text'
+            AND value LIKE 'Free delivery on orders over ₦50,000%%'
+            """,
+            (DEFAULT_SETTINGS["announcement_text"],)
+        )
+
+        cursor.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE is_admin = 1
+            ORDER BY id ASC
+            """
+        )
+
+        admins = cursor.fetchall()
+
+        if len(admins) > 1:
+
+            keep_id = admins[0]["id"]
+
+            cursor.execute(
                 """
-                SELECT id
-                FROM users
+                UPDATE users
+                SET is_admin = 0
                 WHERE is_admin = 1
-                ORDER BY id ASC
-                """
+                AND id != %s
+                """,
+                (keep_id,)
             )
 
-            admins = cur.fetchall()
+        connection.commit()
 
-            if len(admins) > 1:
-
-                keep_id = admins[0]["id"]
-
-                cur.execute(
-                    """
-                    UPDATE users
-                    SET is_admin = 0
-                    WHERE is_admin = 1
-                    AND id != %s
-                    """,
-                    (keep_id,)
-                )
-
-        conn.commit()
+    finally:
+        connection.close()
 
 
 def fetch_one(query, params=()):
 
-    with get_connection() as conn:
+    query = query.replace("?", "%s")
 
-        with conn.cursor() as cur:
+    connection = psycopg2.connect(
+        get_database_url(),
+        sslmode="require",
+        cursor_factory=RealDictCursor
+    )
 
-            cur.execute(query, params)
+    try:
 
-            return cur.fetchone()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            query,
+            params
+        )
+
+        return cursor.fetchone()
+
+    finally:
+        connection.close()
 
 
 def fetch_all(query, params=()):
 
-    with get_connection() as conn:
+    query = query.replace("?", "%s")
 
-        with conn.cursor() as cur:
+    connection = psycopg2.connect(
+        get_database_url(),
+        sslmode="require",
+        cursor_factory=RealDictCursor
+    )
 
-            cur.execute(query, params)
+    try:
 
-            return cur.fetchall()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            query,
+            params
+        )
+
+        return cursor.fetchall()
+
+    finally:
+        connection.close()
 
 
 def get_settings():
@@ -210,35 +287,42 @@ def get_settings():
         "SELECT key, value FROM settings"
     )
 
-    data = DEFAULT_SETTINGS.copy()
+    settings = DEFAULT_SETTINGS.copy()
 
-    data.update(
+    settings.update(
         {
             row["key"]: row["value"]
             for row in rows
         }
     )
 
-    return data
+    return settings
 
 
 def update_settings(values):
 
-    with get_connection() as conn:
+    connection = psycopg2.connect(
+        get_database_url(),
+        sslmode="require"
+    )
 
-        with conn.cursor() as cur:
+    try:
 
-            for key, value in values.items():
+        cursor = connection.cursor()
 
-                cur.execute(
-                    """
-                    INSERT INTO settings(key, value)
-                    VALUES (%s, %s)
+        for key, value in values.items():
 
-                    ON CONFLICT (key)
-                    DO UPDATE SET value = EXCLUDED.value
-                    """,
-                    (key, value)
-                )
+            cursor.execute(
+                """
+                INSERT INTO settings(key, value)
+                VALUES (%s, %s)
+                ON CONFLICT (key)
+                DO UPDATE SET value = EXCLUDED.value
+                """,
+                (key, value)
+            )
 
-        conn.commit()
+        connection.commit()
+
+    finally:
+        connection.close()
