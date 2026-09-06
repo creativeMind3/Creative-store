@@ -3577,6 +3577,10 @@ def too_large(error):
 @app.errorhandler(500)
 def server_error(error):
 
+    app.logger.exception(
+        "UNHANDLED SERVER ERROR"
+    )
+
     return render_template(
         "500.html"
     ), 500
