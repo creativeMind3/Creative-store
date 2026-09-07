@@ -242,12 +242,30 @@ def inject_globals():
         {}
     )
 
-    cart_count = sum(
-        int(q)
-        for q in cart.values()
-    )
+    cart_count = 0
+
+    for quantity in cart.values():
+
+        try:
+            cart_count += int(quantity)
+        except (
+            ValueError,
+            TypeError
+        ):
+            pass
 
     store = get_store()
+
+    admin = fetch_one(
+        """
+        SELECT id
+        FROM users
+        WHERE is_admin=1
+        LIMIT 1
+        """
+    )
+
+    from datetime import datetime
 
     return {
         "store": store,
@@ -263,21 +281,9 @@ def inject_globals():
             'I need assistance.'
         ),
 
-        "admin_exists": bool(
-            fetch_one(
-                """
-                SELECT id
-                FROM users
-                WHERE is_admin=1
-                LIMIT 1
-                """
-            )
-        ),
+        "admin_exists": bool(admin),
 
-        "current_year":
-            __import__("datetime")
-            .datetime.now()
-            .year,
+        "current_year": datetime.now().year,
 
         "is_impersonating":
             bool(
@@ -305,13 +311,14 @@ def load_user():
 
         g.user = fetch_one(
             """
-            SELECT id,
-                   name,
-                   email,
-                   is_admin,
-                   created_at
+            SELECT
+                id,
+                name,
+                email,
+                is_admin,
+                created_at
             FROM users
-            WHERE id = ?
+            WHERE id=?
             """,
             (user_id,)
         )
@@ -786,8 +793,9 @@ def categories():
 
         for row in fetch_all(
             """
-            SELECT category,
-                   COUNT(*) AS count
+            SELECT
+                category,
+                COUNT(*) AS count
             FROM products
             GROUP BY category
             """
@@ -809,7 +817,7 @@ def product(product_id):
         """
         SELECT *
         FROM products
-        WHERE id = ?
+        WHERE id=?
         """,
         (product_id,)
     )
@@ -821,7 +829,7 @@ def product(product_id):
         """
         SELECT *
         FROM products
-        WHERE category = ?
+        WHERE category=?
         AND id != ?
         ORDER BY created_at DESC
         LIMIT 4
@@ -951,7 +959,7 @@ def register():
             """
             SELECT id
             FROM users
-            WHERE email = ?
+            WHERE email=?
             """,
             (email,)
         )
@@ -979,7 +987,8 @@ def register():
 
             with get_connection() as conn:
 
-                cur = conn.execute(
+                # Do NOT rely on lastrowid.
+                conn.execute(
                     """
                     INSERT INTO users(
                         name,
@@ -1001,34 +1010,29 @@ def register():
                     )
                 )
 
-                user_id = cur.lastrowid
-
-                if not user_id:
-
-                    raise RuntimeError(
-                        "Customer account could not be created."
-                    )
-
+                # Retrieve the newly-created account.
                 user = conn.execute(
                     """
                     SELECT
                         id,
+                        name,
+                        email,
                         created_at
                     FROM users
-                    WHERE id = ?
+                    WHERE email=?
                     """,
-                    (user_id,)
+                    (email,)
                 ).fetchone()
 
                 if not user:
 
                     raise RuntimeError(
-                        "Customer account was created but could not be loaded."
+                        "Account was not found after registration."
                     )
 
-                created_at = user[
-                    "created_at"
-                ]
+                user_id = user["id"]
+
+                created_at = user["created_at"]
 
                 conn.commit()
 
@@ -1130,7 +1134,7 @@ def login():
             """
             SELECT *
             FROM users
-            WHERE email = ?
+            WHERE email=?
             """,
             (email,)
         )
@@ -1350,7 +1354,7 @@ def dashboard():
         """
         SELECT *
         FROM orders
-        WHERE user_id = ?
+        WHERE user_id=?
         ORDER BY created_at DESC
         LIMIT 5
         """,
@@ -1434,7 +1438,7 @@ def orders():
             """
             SELECT *
             FROM orders
-            WHERE user_id = ?
+            WHERE user_id=?
             ORDER BY created_at DESC
             """,
             (g.user["id"],)
@@ -1906,6 +1910,9 @@ def checkout():
         ):
             continue
 
+        if qty_int <= 0:
+            continue
+
         item = fetch_one(
             """
             SELECT *
@@ -1944,6 +1951,21 @@ def checkout():
                 qty_int,
                 line
             )
+        )
+
+    if not items:
+
+        session["cart"] = {}
+
+        session.modified = True
+
+        flash(
+            "Your cart is empty.",
+            "warning"
+        )
+
+        return redirect(
+            url_for("shop")
         )
 
     if request.method == "POST":
@@ -2031,7 +2053,11 @@ def checkout():
                         )
                     )
 
-                cur = conn.execute(
+                # -------------------------------------------------
+                # CREATE ORDER
+                # -------------------------------------------------
+
+                conn.execute(
                     """
                     INSERT INTO orders(
                         user_id,
@@ -2063,13 +2089,33 @@ def checkout():
                     )
                 )
 
-                order_id = cur.lastrowid
+                # -------------------------------------------------
+                # GET ORDER ID WITHOUT lastrowid
+                # -------------------------------------------------
 
-                if not order_id:
+                order = conn.execute(
+                    """
+                    SELECT
+                        id
+                    FROM orders
+                    WHERE user_id=?
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    (g.user["id"],)
+                ).fetchone()
+
+                if not order:
 
                     raise RuntimeError(
-                        "Order could not be created."
+                        "Order was created but could not be loaded."
                     )
+
+                order_id = order["id"]
+
+                # -------------------------------------------------
+                # ORDER ITEMS + STOCK
+                # -------------------------------------------------
 
                 for current, qty, _ in verified:
 
@@ -2099,7 +2145,7 @@ def checkout():
                         )
                     )
 
-                    conn.execute(
+                    updated = conn.execute(
                         """
                         UPDATE products
                         SET stock=stock-?
@@ -2112,6 +2158,23 @@ def checkout():
                             qty
                         )
                     )
+
+                    # PostgreSQL/SQLite-compatible wrapper:
+                    # verify stock update using a fresh SELECT.
+                    check_stock = conn.execute(
+                        """
+                        SELECT stock
+                        FROM products
+                        WHERE id=?
+                        """,
+                        (current["id"],)
+                    ).fetchone()
+
+                    if not check_stock:
+
+                        raise RuntimeError(
+                            f'Product {current["name"]} could not be updated.'
+                        )
 
                 conn.commit()
 
@@ -2345,7 +2408,11 @@ def setup():
                         completed=True
                     )
 
-                cur = conn.execute(
+                # -------------------------------------------------
+                # CREATE ADMIN WITHOUT lastrowid
+                # -------------------------------------------------
+
+                conn.execute(
                     """
                     INSERT INTO users(
                         name,
@@ -2369,13 +2436,24 @@ def setup():
                     )
                 )
 
-                admin_id = cur.lastrowid
+                admin = conn.execute(
+                    """
+                    SELECT
+                        id
+                    FROM users
+                    WHERE email=?
+                    AND is_admin=1
+                    """,
+                    (email,)
+                ).fetchone()
 
-                if not admin_id:
+                if not admin:
 
                     raise RuntimeError(
                         "Administrator account could not be created."
                     )
+
+                admin_id = admin["id"]
 
                 conn.commit()
 
