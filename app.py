@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import json
+
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from pathlib import Path
@@ -26,10 +27,12 @@ from flask import (
 from flask_wtf import CSRFProtect
 
 from werkzeug.exceptions import RequestEntityTooLarge
+
 from werkzeug.security import (
     check_password_hash,
     generate_password_hash
 )
+
 from werkzeug.utils import secure_filename
 
 from config import Config
@@ -49,6 +52,7 @@ from database import (
 # =========================================================
 
 app = Flask(__name__)
+
 app.config.from_object(Config)
 
 csrf = CSRFProtect(app)
@@ -70,7 +74,25 @@ HEX_RE = re.compile(
 
 
 # =========================================================
-# TELEGRAM NOTIFICATION
+# CATEGORY HELPERS
+# =========================================================
+
+def get_categories():
+
+    categories = getattr(
+        Config,
+        "CATEGORIES",
+        []
+    )
+
+    if not categories:
+        return []
+
+    return list(categories)
+
+
+# =========================================================
+# TELEGRAM
 # =========================================================
 
 def send_telegram_message(message):
@@ -166,6 +188,7 @@ def notify_new_customer(
 # =========================================================
 
 def get_store():
+
     return get_settings()
 
 
@@ -248,11 +271,16 @@ def inject_globals():
     for quantity in cart.values():
 
         try:
-            cart_count += int(quantity)
+
+            cart_count += int(
+                quantity
+            )
+
         except (
             ValueError,
             TypeError
         ):
+
             pass
 
     store = get_store()
@@ -267,11 +295,13 @@ def inject_globals():
     )
 
     return {
+
         "store": store,
 
         "cart_count": cart_count,
 
-        "categories": Config.CATEGORIES,
+        # Dynamic categories
+        "categories": get_categories(),
 
         "status_options": STATUS_OPTIONS,
 
@@ -289,7 +319,7 @@ def inject_globals():
                 session.get(
                     "impersonating_admin_id"
                 )
-            ),
+            )
     }
 
 
@@ -323,6 +353,7 @@ def load_user():
         )
 
         if not g.user:
+
             session.clear()
 
 
@@ -357,7 +388,7 @@ def security_headers(response):
 
 
 # =========================================================
-# AUTH DECORATORS
+# AUTH
 # =========================================================
 
 def login_required(view):
@@ -407,6 +438,7 @@ def admin_required(view):
             )
 
         if not g.user["is_admin"]:
+
             abort(403)
 
         return view(
@@ -443,6 +475,7 @@ def parse_price(raw):
         )
 
         if value < 0:
+
             raise ValueError
 
         return float(value)
@@ -465,6 +498,7 @@ def parse_stock(raw):
         value = int(raw)
 
         if value < 0:
+
             raise ValueError
 
         return value
@@ -501,6 +535,7 @@ def allowed_file(filename):
 def save_upload(file):
 
     if not file or not file.filename:
+
         return None
 
     if not allowed_file(
@@ -568,6 +603,7 @@ def delete_upload(filename):
     try:
 
         if path.exists():
+
             path.unlink()
 
     except OSError:
@@ -635,6 +671,7 @@ def product_query():
     )
 
     clauses = []
+
     params = []
 
     if q:
@@ -657,7 +694,7 @@ def product_query():
             like
         ]
 
-    if category in Config.CATEGORIES:
+    if category in get_categories():
 
         clauses.append(
             "category = ?"
@@ -694,6 +731,7 @@ def product_query():
         pass
 
     order_map = {
+
         "price_low":
             "price ASC",
 
@@ -733,7 +771,7 @@ def product_query():
 
 
 # =========================================================
-# PUBLIC ROUTES
+# PUBLIC
 # =========================================================
 
 @app.route("/")
@@ -822,6 +860,7 @@ def product(product_id):
     )
 
     if not item:
+
         abort(404)
 
     related = fetch_all(
@@ -846,14 +885,47 @@ def product(product_id):
     )
 
 
+# =========================================================
+# IMAGE SERVING
+# =========================================================
+
 @app.route(
     "/uploads/<path:filename>"
 )
 def uploaded_file(filename):
 
+    # Prevent directory traversal.
+    safe_filename = Path(
+        filename
+    ).name
+
+    if not safe_filename:
+
+        abort(404)
+
+    upload_folder = Path(
+        app.config[
+            "UPLOAD_FOLDER"
+        ]
+    )
+
+    file_path = (
+        upload_folder /
+        safe_filename
+    )
+
+    if not file_path.is_file():
+
+        app.logger.warning(
+            "Image not found: %s",
+            file_path
+        )
+
+        abort(404)
+
     return send_from_directory(
-        app.config["UPLOAD_FOLDER"],
-        Path(filename).name
+        str(upload_folder),
+        safe_filename
     )
 
 
@@ -966,8 +1038,10 @@ def register():
                 url_for("login")
             )
 
-        hashed_password = generate_password_hash(
-            password
+        hashed_password = (
+            generate_password_hash(
+                password
+            )
         )
 
         try:
@@ -1016,7 +1090,10 @@ def register():
                     )
 
                 user_id = user["id"]
-                created_at = user["created_at"]
+
+                created_at = (
+                    user["created_at"]
+                )
 
                 conn.commit()
 
@@ -1319,7 +1396,7 @@ def logout():
 
 
 # =========================================================
-# CUSTOMER DASHBOARD
+# DASHBOARD
 # =========================================================
 
 @app.route("/dashboard")
@@ -1442,6 +1519,7 @@ def order_details(order_id):
     )
 
     if not order:
+
         abort(404)
 
     items = fetch_all(
@@ -1481,7 +1559,9 @@ def cart():
     )
 
     products = []
+
     subtotal = 0.0
+
     cleaned = {}
 
     for pid, qty in cart_data.items():
@@ -1489,6 +1569,7 @@ def cart():
         try:
 
             pid_int = int(pid)
+
             qty_int = int(qty)
 
         except (
@@ -1499,6 +1580,7 @@ def cart():
             continue
 
         if qty_int <= 0:
+
             continue
 
         item = fetch_one(
@@ -1576,6 +1658,7 @@ def buy_now(product_id):
     )
 
     if not item:
+
         abort(404)
 
     if item["stock"] <= 0:
@@ -1648,6 +1731,7 @@ def add_to_cart(product_id):
     )
 
     if not item:
+
         abort(404)
 
     if item["stock"] <= 0:
@@ -1847,7 +1931,7 @@ def clear_cart():
 
 
 # =========================================================
-# CHECKOUT - FIXED FOR POSTGRESQL
+# CHECKOUT
 # =========================================================
 
 @app.route(
@@ -1874,20 +1958,26 @@ def checkout():
         )
 
     items = []
+
     total = 0.0
 
     for pid, qty in cart_data.items():
 
         try:
+
             pid_int = int(pid)
+
             qty_int = int(qty)
+
         except (
             ValueError,
             TypeError
         ):
+
             continue
 
         if qty_int <= 0:
+
             continue
 
         item = fetch_one(
@@ -1988,21 +2078,27 @@ def checkout():
 
             with get_connection() as conn:
 
-                # =================================================
-                # IMPORTANT:
-                # PostgreSQL does NOT support BEGIN IMMEDIATE.
-                # Use normal PostgreSQL transaction BEGIN.
-                # =================================================
+                # -------------------------------------------------
+                # POSTGRESQL FIX
+                # -------------------------------------------------
+                #
+                # DO NOT USE:
+                #
+                # BEGIN IMMEDIATE
+                #
+                # PostgreSQL does not support it.
+                # -------------------------------------------------
 
                 conn.execute(
                     "BEGIN"
                 )
 
                 verified = []
+
                 final_total = 0.0
 
                 # -------------------------------------------------
-                # VERIFY STOCK INSIDE TRANSACTION
+                # VERIFY STOCK
                 # -------------------------------------------------
 
                 for item, qty, _ in items:
@@ -2077,10 +2173,7 @@ def checkout():
                 )
 
                 # -------------------------------------------------
-                # GET NEW ORDER ID
-                #
-                # We do NOT use lastrowid.
-                # The row is visible to this same transaction.
+                # GET ORDER ID
                 # -------------------------------------------------
 
                 order = conn.execute(
@@ -2105,7 +2198,7 @@ def checkout():
                 order_id = order["id"]
 
                 # -------------------------------------------------
-                # CREATE ORDER ITEMS + REDUCE STOCK
+                # ORDER ITEMS + STOCK
                 # -------------------------------------------------
 
                 for current, qty, _ in verified:
@@ -2150,32 +2243,16 @@ def checkout():
                         )
                     )
 
-                    # Check the affected row count.
-                    # If zero rows were updated, stock changed
-                    # between verification and update.
-                    if hasattr(updated, "rowcount"):
+                    if hasattr(
+                        updated,
+                        "rowcount"
+                    ):
 
                         if updated.rowcount != 1:
 
                             raise ValueError(
                                 f'Insufficient stock for {current["name"]}.'
                             )
-
-                    # Additional verification.
-                    check_stock = conn.execute(
-                        """
-                        SELECT stock
-                        FROM products
-                        WHERE id=?
-                        """,
-                        (current["id"],)
-                    ).fetchone()
-
-                    if not check_stock:
-
-                        raise RuntimeError(
-                            f'Product {current["name"]} could not be updated.'
-                        )
 
                 # -------------------------------------------------
                 # COMMIT
@@ -2184,7 +2261,7 @@ def checkout():
                 conn.commit()
 
             # -----------------------------------------------------
-            # CLEAR CART ONLY AFTER SUCCESSFUL COMMIT
+            # CLEAR CART ONLY AFTER SUCCESS
             # -----------------------------------------------------
 
             session["cart"] = {}
@@ -2260,6 +2337,7 @@ def order_confirmation(order_id):
     )
 
     if not order:
+
         abort(404)
 
     items = fetch_all(
@@ -2536,6 +2614,7 @@ def setup():
 def admin_dashboard():
 
     stats = {
+
         "products":
             fetch_one(
                 "SELECT COUNT(*) c FROM products"
@@ -2793,7 +2872,7 @@ def add_product():
 
             if (
                 len(name) < 2
-                or category not in Config.CATEGORIES
+                or category not in get_categories()
             ):
 
                 raise ValueError(
@@ -2878,7 +2957,10 @@ def add_product():
         except ValueError as exc:
 
             if image:
-                delete_upload(image)
+
+                delete_upload(
+                    image
+                )
 
             flash(
                 str(exc),
@@ -2911,6 +2993,7 @@ def edit_product(product_id):
     )
 
     if not item:
+
         abort(404)
 
     if request.method == "POST":
@@ -2950,7 +3033,7 @@ def edit_product(product_id):
 
             if (
                 len(name) < 2
-                or category not in Config.CATEGORIES
+                or category not in get_categories()
             ):
 
                 raise ValueError(
@@ -2989,7 +3072,10 @@ def edit_product(product_id):
 
                 new_image = uploaded_image
 
-            elif uploaded and uploaded.filename:
+            elif (
+                uploaded
+                and uploaded.filename
+            ):
 
                 new_image = save_upload(
                     uploaded
@@ -3050,7 +3136,10 @@ def edit_product(product_id):
         except ValueError as exc:
 
             if new_image:
-                delete_upload(new_image)
+
+                delete_upload(
+                    new_image
+                )
 
             flash(
                 str(exc),
@@ -3083,6 +3172,7 @@ def delete_product(product_id):
     )
 
     if not item:
+
         abort(404)
 
     try:
@@ -3201,6 +3291,7 @@ def admin_order_details(order_id):
     )
 
     if not order:
+
         abort(404)
 
     if request.method == "POST":
@@ -3348,7 +3439,7 @@ def admin_customer_access():
 
 
 # =========================================================
-# LOGO UPLOAD
+# LOGO
 # =========================================================
 
 @app.post(
@@ -3412,9 +3503,11 @@ def admin_settings():
         ).strip()
 
         if not HEX_RE.match(color):
+
             color = "#6d4aff"
 
         values = {
+
             "store_name":
                 request.form.get(
                     "store_name",
@@ -3527,7 +3620,7 @@ def admin_settings():
                 if request.form.get(
                     "nav_contact"
                 ) == "1"
-                else "0",
+                else "0"
         }
 
         try:
