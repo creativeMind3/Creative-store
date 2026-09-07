@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import (
     Flask,
@@ -21,16 +21,15 @@ from flask import (
     request,
     session,
     url_for,
-    send_from_directory
+    send_from_directory,
 )
 
 from flask_wtf import CSRFProtect
-
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from werkzeug.security import (
     check_password_hash,
-    generate_password_hash
+    generate_password_hash,
 )
 
 from werkzeug.utils import secure_filename
@@ -43,7 +42,7 @@ from database import (
     get_connection,
     get_settings,
     init_db,
-    update_settings
+    update_settings,
 )
 
 
@@ -55,6 +54,34 @@ app = Flask(__name__)
 
 app.config.from_object(Config)
 
+# =========================================================
+# SESSION SECURITY
+# =========================================================
+
+app.config["SECRET_KEY"] = os.environ.get(
+    "SECRET_KEY",
+    app.config.get("SECRET_KEY"),
+)
+
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+
+app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+
+is_render = (
+    os.environ.get("RENDER", "").lower() == "true"
+)
+
+app.config["SESSION_COOKIE_SECURE"] = (
+    os.environ.get(
+        "SESSION_COOKIE_SECURE",
+        "1" if is_render else "0",
+    )
+    == "1"
+)
+
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
 csrf = CSRFProtect(app)
 
 init_db()
@@ -65,7 +92,7 @@ STATUS_OPTIONS = [
     "Processing",
     "Shipped",
     "Delivered",
-    "Cancelled"
+    "Cancelled",
 ]
 
 HEX_RE = re.compile(
@@ -78,11 +105,10 @@ HEX_RE = re.compile(
 # =========================================================
 
 def get_categories():
-
     categories = getattr(
         Config,
         "CATEGORIES",
-        []
+        [],
     )
 
     if not categories:
@@ -96,15 +122,14 @@ def get_categories():
 # =========================================================
 
 def send_telegram_message(message):
-
     bot_token = os.environ.get(
         "TELEGRAM_BOT_TOKEN",
-        ""
+        "",
     ).strip()
 
     chat_id = os.environ.get(
         "TELEGRAM_CHAT_ID",
-        ""
+        "",
     ).strip()
 
     if not bot_token or not chat_id:
@@ -117,11 +142,10 @@ def send_telegram_message(message):
 
     payload = {
         "chat_id": chat_id,
-        "text": message
+        "text": message,
     }
 
     try:
-
         data = json.dumps(
             payload
         ).encode("utf-8")
@@ -132,41 +156,37 @@ def send_telegram_message(message):
             headers={
                 "Content-Type": "application/json"
             },
-            method="POST"
+            method="POST",
         )
 
         with urlopen(
             req,
-            timeout=10
+            timeout=10,
         ) as response:
-
             return response.status == 200
 
     except (
         HTTPError,
         URLError,
         TimeoutError,
-        OSError
+        OSError,
     ):
-
         app.logger.exception(
             "Telegram notification failed."
         )
-
         return False
 
 
 def notify_new_customer(
     name,
     email,
-    created_at
+    created_at,
 ):
-
     store = get_store()
 
     store_name = store.get(
         "store_name",
-        "BIB-STORE"
+        "BIB-STORE",
     )
 
     message = (
@@ -178,9 +198,7 @@ def notify_new_customer(
         "A new customer has created an account."
     )
 
-    return send_telegram_message(
-        message
-    )
+    return send_telegram_message(message)
 
 
 # =========================================================
@@ -188,25 +206,20 @@ def notify_new_customer(
 # =========================================================
 
 def get_store():
-
     return get_settings()
 
 
 def whatsapp_number(raw):
-
     return re.sub(
         r"\D",
         "",
-        raw or ""
+        raw or "",
     )
 
 
 def wa_link(message):
-
     number = whatsapp_number(
-        get_store().get(
-            "whatsapp"
-        )
+        get_store().get("whatsapp")
     )
 
     if not number:
@@ -220,31 +233,29 @@ def wa_link(message):
 
 def build_order_whatsapp(
     order,
-    prefix="Hello"
+    prefix="Hello",
 ):
-
     store = get_store()
 
     template = store.get(
         "whatsapp_message",
-        ""
+        "",
     )
 
     message = template.replace(
         "{{store_name}}",
         store.get(
             "store_name",
-            "BIB-STORE"
-        )
+            "BIB-STORE",
+        ),
     )
 
     message = message.replace(
         "{{order_id}}",
-        str(order["id"])
+        str(order["id"]),
     )
 
     if message == template:
-
         message = (
             f'{prefix} '
             f'{store.get("store_name", "BIB-STORE")}, '
@@ -260,27 +271,20 @@ def build_order_whatsapp(
 
 @app.context_processor
 def inject_globals():
-
     cart = session.get(
         "cart",
-        {}
+        {},
     )
 
     cart_count = 0
 
     for quantity in cart.values():
-
         try:
-
-            cart_count += int(
-                quantity
-            )
-
+            cart_count += int(quantity)
         except (
             ValueError,
-            TypeError
+            TypeError,
         ):
-
             pass
 
     store = get_store()
@@ -295,31 +299,21 @@ def inject_globals():
     )
 
     return {
-
         "store": store,
-
         "cart_count": cart_count,
-
-        # Dynamic categories
         "categories": get_categories(),
-
         "status_options": STATUS_OPTIONS,
-
         "whatsapp_url": wa_link(
             f'Hello {store.get("store_name", "BIB-STORE")}, '
-            'I need assistance.'
+            "I need assistance."
         ),
-
         "admin_exists": bool(admin),
-
         "current_year": datetime.now().year,
-
-        "is_impersonating":
-            bool(
-                session.get(
-                    "impersonating_admin_id"
-                )
+        "is_impersonating": bool(
+            session.get(
+                "impersonating_admin_id"
             )
+        ),
     }
 
 
@@ -329,15 +323,11 @@ def inject_globals():
 
 @app.before_request
 def load_user():
-
     g.user = None
 
-    user_id = session.get(
-        "user_id"
-    )
+    user_id = session.get("user_id")
 
     if user_id:
-
         g.user = fetch_one(
             """
             SELECT
@@ -349,11 +339,10 @@ def load_user():
             FROM users
             WHERE id=?
             """,
-            (user_id,)
+            (user_id,),
         )
 
         if not g.user:
-
             session.clear()
 
 
@@ -363,7 +352,6 @@ def load_user():
 
 @app.after_request
 def security_headers(response):
-
     response.headers[
         "X-Content-Type-Options"
     ] = "nosniff"
@@ -392,59 +380,46 @@ def security_headers(response):
 # =========================================================
 
 def login_required(view):
-
     @wraps(view)
     def wrapped(*args, **kwargs):
-
         if not g.user:
-
             flash(
                 "Please log in to continue.",
-                "warning"
+                "warning",
             )
 
             return redirect(
                 url_for(
                     "login",
-                    next=request.path
+                    next=request.path,
                 )
             )
 
-        return view(
-            *args,
-            **kwargs
-        )
+        return view(*args, **kwargs)
 
     return wrapped
 
 
 def admin_required(view):
-
     @wraps(view)
     def wrapped(*args, **kwargs):
-
         if not g.user:
-
             flash(
                 "Please log in as an administrator.",
-                "warning"
+                "warning",
             )
 
             return redirect(
                 url_for(
                     "login",
-                    next=request.path
+                    next=request.path,
                 )
             )
 
         if not g.user["is_admin"]:
-
             abort(403)
 
-        return view(
-            *args,
-            **kwargs
-        )
+        return view(*args, **kwargs)
 
     return wrapped
 
@@ -454,20 +429,17 @@ def admin_required(view):
 # =========================================================
 
 def valid_email(email):
-
     return (
         "@" in email
         and "." in email.rsplit(
             "@",
-            1
+            1,
         )[-1]
     )
 
 
 def parse_price(raw):
-
     try:
-
         value = Decimal(
             str(raw)
             .replace(",", "")
@@ -475,7 +447,6 @@ def parse_price(raw):
         )
 
         if value < 0:
-
             raise ValueError
 
         return float(value)
@@ -483,48 +454,40 @@ def parse_price(raw):
     except (
         InvalidOperation,
         ValueError,
-        TypeError
+        TypeError,
     ):
-
         raise ValueError(
             "Invalid price."
         )
 
 
 def parse_stock(raw):
-
     try:
-
         value = int(raw)
 
         if value < 0:
-
             raise ValueError
 
         return value
 
     except (
         ValueError,
-        TypeError
+        TypeError,
     ):
-
         raise ValueError(
             "Stock must be a non-negative whole number."
         )
 
 
 def allowed_file(filename):
-
     return (
         "."
         in filename
         and filename.rsplit(
             ".",
-            1
+            1,
         )[1].lower()
-        in app.config[
-            "ALLOWED_EXTENSIONS"
-        ]
+        in app.config["ALLOWED_EXTENSIONS"]
     )
 
 
@@ -533,15 +496,10 @@ def allowed_file(filename):
 # =========================================================
 
 def save_upload(file):
-
     if not file or not file.filename:
-
         return None
 
-    if not allowed_file(
-        file.filename
-    ):
-
+    if not allowed_file(file.filename):
         raise ValueError(
             "Only JPG, JPEG, PNG and WEBP images are allowed."
         )
@@ -554,14 +512,13 @@ def save_upload(file):
         not safe_name
         or "." not in safe_name
     ):
-
         raise ValueError(
             "Invalid image filename."
         )
 
     ext = safe_name.rsplit(
         ".",
-        1
+        1,
     )[-1].lower()
 
     filename = (
@@ -569,14 +526,12 @@ def save_upload(file):
     )
 
     upload_folder = Path(
-        app.config[
-            "UPLOAD_FOLDER"
-        ]
+        app.config["UPLOAD_FOLDER"]
     )
 
     upload_folder.mkdir(
         parents=True,
-        exist_ok=True
+        exist_ok=True,
     )
 
     file.save(
@@ -587,27 +542,20 @@ def save_upload(file):
 
 
 def delete_upload(filename):
-
     if not filename:
         return
 
     path = (
         Path(
-            app.config[
-                "UPLOAD_FOLDER"
-            ]
+            app.config["UPLOAD_FOLDER"]
         )
         / Path(filename).name
     )
 
     try:
-
         if path.exists():
-
             path.unlink()
-
     except OSError:
-
         pass
 
 
@@ -616,9 +564,7 @@ def delete_upload(filename):
 # =========================================================
 
 def safe_next_url(target):
-
     if not target:
-
         return (
             url_for("dashboard")
             if g.user
@@ -629,7 +575,6 @@ def safe_next_url(target):
         target.startswith("/")
         and not target.startswith("//")
     ):
-
         return target
 
     return (
@@ -644,38 +589,35 @@ def safe_next_url(target):
 # =========================================================
 
 def product_query():
-
     q = request.args.get(
         "q",
-        ""
+        "",
     ).strip()
 
     category = request.args.get(
         "category",
-        ""
+        "",
     ).strip()
 
     min_price = request.args.get(
         "min_price",
-        ""
+        "",
     ).strip()
 
     max_price = request.args.get(
         "max_price",
-        ""
+        "",
     ).strip()
 
     sort = request.args.get(
         "sort",
-        "newest"
+        "newest",
     )
 
     clauses = []
-
     params = []
 
     if q:
-
         clauses.append(
             """
             (
@@ -691,61 +633,42 @@ def product_query():
         params += [
             like,
             like,
-            like
+            like,
         ]
 
     if category in get_categories():
-
         clauses.append(
             "category = ?"
         )
 
-        params.append(
-            category
-        )
+        params.append(category)
 
     try:
-
         if min_price:
-
             clauses.append(
                 "price >= ?"
             )
-
             params.append(
                 float(min_price)
             )
 
         if max_price:
-
             clauses.append(
                 "price <= ?"
             )
-
             params.append(
                 float(max_price)
             )
 
     except ValueError:
-
         pass
 
     order_map = {
-
-        "price_low":
-            "price ASC",
-
-        "price_high":
-            "price DESC",
-
-        "name":
-            "LOWER(name) ASC",
-
-        "oldest":
-            "created_at ASC",
-
-        "newest":
-            "created_at DESC"
+        "price_low": "price ASC",
+        "price_high": "price DESC",
+        "name": "LOWER(name) ASC",
+        "oldest": "created_at ASC",
+        "newest": "created_at DESC",
     }
 
     where = (
@@ -766,7 +689,7 @@ def product_query():
             "created_at DESC"
         )}
         """,
-        params
+        params,
     )
 
 
@@ -776,7 +699,6 @@ def product_query():
 
 @app.route("/")
 def index():
-
     featured = fetch_all(
         """
         SELECT *
@@ -808,26 +730,22 @@ def index():
     return render_template(
         "index.html",
         featured=featured,
-        popular=popular
+        popular=popular,
     )
 
 
 @app.route("/shop")
 def shop():
-
     return render_template(
         "shop.html",
-        products=product_query()
+        products=product_query(),
     )
 
 
 @app.route("/categories")
 def categories():
-
     counts = {
-        row["category"]:
-            row["count"]
-
+        row["category"]: row["count"]
         for row in fetch_all(
             """
             SELECT
@@ -841,26 +759,22 @@ def categories():
 
     return render_template(
         "categories.html",
-        counts=counts
+        counts=counts,
     )
 
 
-@app.route(
-    "/product/<int:product_id>"
-)
+@app.route("/product/<int:product_id>")
 def product(product_id):
-
     item = fetch_one(
         """
         SELECT *
         FROM products
         WHERE id=?
         """,
-        (product_id,)
+        (product_id,),
     )
 
     if not item:
-
         abort(404)
 
     related = fetch_all(
@@ -874,14 +788,14 @@ def product(product_id):
         """,
         (
             item["category"],
-            product_id
-        )
+            product_id,
+        ),
     )
 
     return render_template(
         "product.html",
         product=item,
-        related=related
+        related=related,
     )
 
 
@@ -889,43 +803,33 @@ def product(product_id):
 # IMAGE SERVING
 # =========================================================
 
-@app.route(
-    "/uploads/<path:filename>"
-)
+@app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-
-    # Prevent directory traversal.
     safe_filename = Path(
         filename
     ).name
 
     if not safe_filename:
-
         abort(404)
 
     upload_folder = Path(
-        app.config[
-            "UPLOAD_FOLDER"
-        ]
+        app.config["UPLOAD_FOLDER"]
     )
 
     file_path = (
-        upload_folder /
-        safe_filename
+        upload_folder / safe_filename
     )
 
     if not file_path.is_file():
-
         app.logger.warning(
             "Image not found: %s",
-            file_path
+            file_path,
         )
-
         abort(404)
 
     return send_from_directory(
         str(upload_folder),
-        safe_filename
+        safe_filename,
     )
 
 
@@ -935,12 +839,10 @@ def uploaded_file(filename):
 
 @app.route(
     "/register",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 def register():
-
     if g.user:
-
         return redirect(
             url_for(
                 "admin_dashboard"
@@ -950,70 +852,61 @@ def register():
         )
 
     if request.method == "POST":
-
         name = request.form.get(
             "name",
-            ""
+            "",
         ).strip()
 
         email = request.form.get(
             "email",
-            ""
+            "",
         ).strip().lower()
 
         password = request.form.get(
             "password",
-            ""
+            "",
         )
 
         confirm = request.form.get(
             "confirm_password",
-            ""
+            "",
         )
 
         if (
             len(name) < 2
             or len(name) > 100
         ):
-
             flash(
                 "Please enter a valid name.",
-                "danger"
+                "danger",
             )
-
             return render_template(
                 "register.html"
             )
 
         if not valid_email(email):
-
             flash(
                 "Please enter a valid email address.",
-                "danger"
+                "danger",
             )
-
             return render_template(
                 "register.html"
             )
 
         if len(password) < 8:
-
             flash(
                 "Password must be at least 8 characters.",
-                "danger"
+                "danger",
             )
-
             return render_template(
                 "register.html"
             )
 
         if password != confirm:
-
             flash(
                 "Passwords do not match.",
-                "danger"
+                "danger",
             )
-
             return render_template(
                 "register.html"
             )
@@ -1024,30 +917,24 @@ def register():
             FROM users
             WHERE email=?
             """,
-            (email,)
+            (email,),
         )
 
         if existing_user:
-
             flash(
                 "An account with that email already exists. Please log in.",
-                "warning"
+                "warning",
             )
-
             return redirect(
                 url_for("login")
             )
 
-        hashed_password = (
-            generate_password_hash(
-                password
-            )
+        hashed_password = generate_password_hash(
+            password
         )
 
         try:
-
             with get_connection() as conn:
-
                 conn.execute(
                     """
                     INSERT INTO users(
@@ -1066,8 +953,8 @@ def register():
                     (
                         name,
                         email,
-                        hashed_password
-                    )
+                        hashed_password,
+                    ),
                 )
 
                 user = conn.execute(
@@ -1080,46 +967,37 @@ def register():
                     FROM users
                     WHERE email=?
                     """,
-                    (email,)
+                    (email,),
                 ).fetchone()
 
                 if not user:
-
                     raise RuntimeError(
                         "Account was not found after registration."
                     )
 
                 user_id = user["id"]
-
-                created_at = (
-                    user["created_at"]
-                )
+                created_at = user["created_at"]
 
                 conn.commit()
 
             try:
-
                 notify_new_customer(
                     name,
                     email,
-                    created_at
+                    created_at,
                 )
-
             except Exception:
-
                 app.logger.exception(
                     "Customer notification failed."
                 )
 
             session.clear()
-
             session["user_id"] = user_id
-
             session.permanent = True
 
             flash(
                 "Account created successfully! Welcome to the store.",
-                "success"
+                "success",
             )
 
             return redirect(
@@ -1127,18 +1005,13 @@ def register():
             )
 
         except Exception:
-
             app.logger.exception(
                 "Customer registration failed."
             )
 
             flash(
                 "We could not create your account right now. Please try again.",
-                "danger"
-            )
-
-            return render_template(
-                "register.html"
+                "danger",
             )
 
     return render_template(
@@ -1152,12 +1025,10 @@ def register():
 
 @app.route(
     "/login",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 def login():
-
     if g.user:
-
         return redirect(
             url_for(
                 "admin_dashboard"
@@ -1168,19 +1039,18 @@ def login():
 
     next_url = request.args.get(
         "next",
-        ""
+        "",
     )
 
     if request.method == "POST":
-
         email = request.form.get(
             "email",
-            ""
+            "",
         ).strip().lower()
 
         password = request.form.get(
             "password",
-            ""
+            "",
         )
 
         user = fetch_one(
@@ -1189,28 +1059,24 @@ def login():
             FROM users
             WHERE email=?
             """,
-            (email,)
+            (email,),
         )
 
         if (
             not user
             or not check_password_hash(
                 user["password"],
-                password
+                password,
             )
         ):
-
             flash(
                 "Invalid email or password.",
-                "danger"
+                "danger",
             )
 
         else:
-
             session.clear()
-
             session["user_id"] = user["id"]
-
             session.permanent = True
 
             return redirect(
@@ -1224,7 +1090,7 @@ def login():
 
     return render_template(
         "login.html",
-        next_url=next_url
+        next_url=next_url,
     )
 
 
@@ -1234,12 +1100,10 @@ def login():
 
 @app.route("/admin/login")
 def admin_login():
-
     if (
         g.user
         and g.user["is_admin"]
     ):
-
         return redirect(
             url_for(
                 "admin_dashboard"
@@ -1251,7 +1115,7 @@ def admin_login():
             "login",
             next=url_for(
                 "admin_dashboard"
-            )
+            ),
         )
     )
 
@@ -1262,11 +1126,10 @@ def admin_login():
 
 @app.route(
     "/admin/customers/<int:user_id>/login-as",
-    methods=["POST"]
+    methods=["POST"],
 )
 @admin_required
 def admin_login_as_customer(user_id):
-
     customer = fetch_one(
         """
         SELECT
@@ -1278,14 +1141,13 @@ def admin_login_as_customer(user_id):
         WHERE id=?
         AND is_admin=0
         """,
-        (user_id,)
+        (user_id,),
     )
 
     if not customer:
-
         flash(
             "Customer account was not found.",
-            "danger"
+            "danger",
         )
 
         return redirect(
@@ -1296,19 +1158,13 @@ def admin_login_as_customer(user_id):
 
     admin_id = g.user["id"]
 
-    session[
-        "impersonating_admin_id"
-    ] = admin_id
-
-    session[
-        "user_id"
-    ] = customer["id"]
-
+    session["impersonating_admin_id"] = admin_id
+    session["user_id"] = customer["id"]
     session.permanent = True
 
     flash(
         f"You are now viewing the store as {customer['name']}.",
-        "success"
+        "success",
     )
 
     return redirect(
@@ -1318,16 +1174,14 @@ def admin_login_as_customer(user_id):
 
 @app.route(
     "/admin/return-from-customer",
-    methods=["POST"]
+    methods=["POST"],
 )
 def return_from_customer():
-
     admin_id = session.get(
         "impersonating_admin_id"
     )
 
     if not admin_id:
-
         return redirect(
             url_for("index")
         )
@@ -1341,16 +1195,15 @@ def return_from_customer():
         WHERE id=?
         AND is_admin=1
         """,
-        (admin_id,)
+        (admin_id,),
     )
 
     if not admin:
-
         session.clear()
 
         flash(
             "Admin session could not be restored.",
-            "danger"
+            "danger",
         )
 
         return redirect(
@@ -1359,16 +1212,15 @@ def return_from_customer():
 
     session.pop(
         "impersonating_admin_id",
-        None
+        None,
     )
 
     session["user_id"] = admin["id"]
-
     session.permanent = True
 
     flash(
         "Returned to the administrator account.",
-        "success"
+        "success",
     )
 
     return redirect(
@@ -1382,12 +1234,11 @@ def return_from_customer():
 
 @app.route("/logout")
 def logout():
-
     session.clear()
 
     flash(
         "You have been logged out.",
-        "success"
+        "success",
     )
 
     return redirect(
@@ -1402,7 +1253,6 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-
     orders = fetch_all(
         """
         SELECT *
@@ -1411,12 +1261,12 @@ def dashboard():
         ORDER BY created_at DESC
         LIMIT 5
         """,
-        (g.user["id"],)
+        (g.user["id"],),
     )
 
     return render_template(
         "dashboard.html",
-        orders=orders
+        orders=orders,
     )
 
 
@@ -1426,29 +1276,24 @@ def dashboard():
 
 @app.route(
     "/profile",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @login_required
 def profile():
-
     if request.method == "POST":
-
         name = request.form.get(
             "name",
-            ""
+            "",
         ).strip()
 
         if len(name) < 2:
-
             flash(
                 "Please enter a valid name.",
-                "danger"
+                "danger",
             )
 
         else:
-
             with get_connection() as conn:
-
                 conn.execute(
                     """
                     UPDATE users
@@ -1457,15 +1302,15 @@ def profile():
                     """,
                     (
                         name,
-                        g.user["id"]
-                    )
+                        g.user["id"],
+                    ),
                 )
 
                 conn.commit()
 
             flash(
                 "Profile updated.",
-                "success"
+                "success",
             )
 
             return redirect(
@@ -1484,7 +1329,6 @@ def profile():
 @app.route("/orders")
 @login_required
 def orders():
-
     return render_template(
         "orders.html",
         orders=fetch_all(
@@ -1494,8 +1338,8 @@ def orders():
             WHERE user_id=?
             ORDER BY created_at DESC
             """,
-            (g.user["id"],)
-        )
+            (g.user["id"],),
+        ),
     )
 
 
@@ -1504,7 +1348,6 @@ def orders():
 )
 @login_required
 def order_details(order_id):
-
     order = fetch_one(
         """
         SELECT *
@@ -1514,12 +1357,11 @@ def order_details(order_id):
         """,
         (
             order_id,
-            g.user["id"]
-        )
+            g.user["id"],
+        ),
     )
 
     if not order:
-
         abort(404)
 
     items = fetch_all(
@@ -1529,11 +1371,7 @@ def order_details(order_id):
         WHERE order_id=?
         ORDER BY id
         """,
-        (order_id,)
-    )
-
-    wa_message = build_order_whatsapp(
-        order
+        (order_id,),
     )
 
     return render_template(
@@ -1541,8 +1379,8 @@ def order_details(order_id):
         order=order,
         items=items,
         order_whatsapp_url=wa_link(
-            wa_message
-        )
+            build_order_whatsapp(order)
+        ),
     )
 
 
@@ -1552,35 +1390,26 @@ def order_details(order_id):
 
 @app.route("/cart")
 def cart():
-
     cart_data = session.get(
         "cart",
-        {}
+        {},
     )
 
     products = []
-
     subtotal = 0.0
-
     cleaned = {}
 
     for pid, qty in cart_data.items():
-
         try:
-
             pid_int = int(pid)
-
             qty_int = int(qty)
-
         except (
             ValueError,
-            TypeError
+            TypeError,
         ):
-
             continue
 
         if qty_int <= 0:
-
             continue
 
         item = fetch_one(
@@ -1589,28 +1418,24 @@ def cart():
             FROM products
             WHERE id=?
             """,
-            (pid_int,)
+            (pid_int,),
         )
 
         if (
             not item
             or item["stock"] <= 0
         ):
-
             continue
 
         qty_int = min(
             qty_int,
-            item["stock"]
+            item["stock"],
         )
 
-        cleaned[
-            str(pid_int)
-        ] = qty_int
+        cleaned[str(pid_int)] = qty_int
 
         line_total = (
-            item["price"]
-            * qty_int
+            item["price"] * qty_int
         )
 
         subtotal += line_total
@@ -1619,20 +1444,18 @@ def cart():
             {
                 "product": item,
                 "quantity": qty_int,
-                "line_total": line_total
+                "line_total": line_total,
             }
         )
 
     if cleaned != cart_data:
-
         session["cart"] = cleaned
-
         session.modified = True
 
     return render_template(
         "cart.html",
         items=products,
-        subtotal=subtotal
+        subtotal=subtotal,
     )
 
 
@@ -1644,7 +1467,6 @@ def cart():
     "/buy-now/<int:product_id>"
 )
 def buy_now(product_id):
-
     item = fetch_one(
         """
         SELECT
@@ -1654,52 +1476,46 @@ def buy_now(product_id):
         FROM products
         WHERE id=?
         """,
-        (product_id,)
+        (product_id,),
     )
 
     if not item:
-
         abort(404)
 
     if item["stock"] <= 0:
-
         flash(
             "This product is out of stock.",
-            "danger"
+            "danger",
         )
 
         return redirect(
             url_for(
                 "product",
-                product_id=product_id
+                product_id=product_id,
             )
         )
 
     try:
-
         quantity = max(
             1,
             int(
                 request.form.get(
                     "quantity",
-                    1
+                    1,
                 )
-            )
+            ),
         )
-
     except (
         ValueError,
-        TypeError
+        TypeError,
     ):
-
         quantity = 1
 
     session["cart"] = {
-        str(product_id):
-            min(
-                quantity,
-                item["stock"]
-            )
+        str(product_id): min(
+            quantity,
+            item["stock"],
+        )
     }
 
     session.modified = True
@@ -1717,7 +1533,6 @@ def buy_now(product_id):
     "/cart/add/<int:product_id>"
 )
 def add_to_cart(product_id):
-
     item = fetch_one(
         """
         SELECT
@@ -1727,18 +1542,16 @@ def add_to_cart(product_id):
         FROM products
         WHERE id=?
         """,
-        (product_id,)
+        (product_id,),
     )
 
     if not item:
-
         abort(404)
 
     if item["stock"] <= 0:
-
         flash(
             "This product is out of stock.",
-            "danger"
+            "danger",
         )
 
         return redirect(
@@ -1747,50 +1560,44 @@ def add_to_cart(product_id):
         )
 
     try:
-
         quantity = max(
             1,
             int(
                 request.form.get(
                     "quantity",
-                    1
+                    1,
                 )
-            )
+            ),
         )
-
     except (
         ValueError,
-        TypeError
+        TypeError,
     ):
-
         quantity = 1
 
     cart_data = session.get(
         "cart",
-        {}
+        {},
     )
 
     current = int(
         cart_data.get(
             str(product_id),
-            0
+            0,
         )
     )
 
-    cart_data[
-        str(product_id)
-    ] = min(
+    cart_data[str(product_id)] = min(
         current + quantity,
-        item["stock"]
+        item["stock"],
     )
 
     session["cart"] = cart_data
-
     session.modified = True
 
     flash(
         f'{item["name"]} added to cart.',
-        "success"
+        "success",
     )
 
     return redirect(
@@ -1808,67 +1615,55 @@ def add_to_cart(product_id):
     "/cart/update/<int:product_id>"
 )
 def update_cart(product_id):
-
     item = fetch_one(
         """
         SELECT stock
         FROM products
         WHERE id=?
         """,
-        (product_id,)
+        (product_id,),
     )
 
     cart_data = session.get(
         "cart",
-        {}
+        {},
     )
 
     if (
         not item
         or item["stock"] <= 0
     ):
-
         cart_data.pop(
             str(product_id),
-            None
+            None,
         )
 
     else:
-
         try:
-
             qty = int(
                 request.form.get(
                     "quantity",
-                    1
+                    1,
                 )
             )
-
         except (
             ValueError,
-            TypeError
+            TypeError,
         ):
-
             qty = 1
 
         if qty <= 0:
-
             cart_data.pop(
                 str(product_id),
-                None
+                None,
             )
-
         else:
-
-            cart_data[
-                str(product_id)
-            ] = min(
+            cart_data[str(product_id)] = min(
                 qty,
-                item["stock"]
+                item["stock"],
             )
 
     session["cart"] = cart_data
-
     session.modified = True
 
     return redirect(
@@ -1884,24 +1679,22 @@ def update_cart(product_id):
     "/cart/remove/<int:product_id>"
 )
 def remove_from_cart(product_id):
-
     cart_data = session.get(
         "cart",
-        {}
+        {},
     )
 
     cart_data.pop(
         str(product_id),
-        None
+        None,
     )
 
     session["cart"] = cart_data
-
     session.modified = True
 
     flash(
         "Item removed from cart.",
-        "success"
+        "success",
     )
 
     return redirect(
@@ -1915,14 +1708,12 @@ def remove_from_cart(product_id):
 
 @app.post("/cart/clear")
 def clear_cart():
-
     session["cart"] = {}
-
     session.modified = True
 
     flash(
         "Cart cleared.",
-        "success"
+        "success",
     )
 
     return redirect(
@@ -1936,21 +1727,19 @@ def clear_cart():
 
 @app.route(
     "/checkout",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @login_required
 def checkout():
-
     cart_data = session.get(
         "cart",
-        {}
+        {},
     )
 
     if not cart_data:
-
         flash(
             "Your cart is empty.",
-            "warning"
+            "warning",
         )
 
         return redirect(
@@ -1958,26 +1747,19 @@ def checkout():
         )
 
     items = []
-
     total = 0.0
 
     for pid, qty in cart_data.items():
-
         try:
-
             pid_int = int(pid)
-
             qty_int = int(qty)
-
         except (
             ValueError,
-            TypeError
+            TypeError,
         ):
-
             continue
 
         if qty_int <= 0:
-
             continue
 
         item = fetch_one(
@@ -1986,19 +1768,18 @@ def checkout():
             FROM products
             WHERE id=?
             """,
-            (pid_int,)
+            (pid_int,),
         )
 
         if (
             not item
             or item["stock"] < qty_int
         ):
-
             flash(
                 f'Stock changed for '
                 f'{item["name"] if item else "one of your items"}. '
-                'Please review your cart.',
-                "danger"
+                "Please review your cart.",
+                "danger",
             )
 
             return redirect(
@@ -2006,8 +1787,7 @@ def checkout():
             )
 
         line = (
-            item["price"]
-            * qty_int
+            item["price"] * qty_int
         )
 
         total += line
@@ -2016,19 +1796,17 @@ def checkout():
             (
                 item,
                 qty_int,
-                line
+                line,
             )
         )
 
     if not items:
-
         session["cart"] = {}
-
         session.modified = True
 
         flash(
             "Your cart is empty.",
-            "warning"
+            "warning",
         )
 
         return redirect(
@@ -2036,25 +1814,24 @@ def checkout():
         )
 
     if request.method == "POST":
-
         customer_name = request.form.get(
             "customer_name",
-            ""
+            "",
         ).strip()
 
         phone = request.form.get(
             "phone",
-            ""
+            "",
         ).strip()
 
         address = request.form.get(
             "address",
-            ""
+            "",
         ).strip()
 
         note = request.form.get(
             "note",
-            ""
+            "",
         ).strip()
 
         if (
@@ -2062,68 +1839,54 @@ def checkout():
             or not phone
             or len(address) < 5
         ):
-
             flash(
                 "Please complete your name, phone number and delivery address.",
-                "danger"
+                "danger",
             )
 
             return render_template(
                 "checkout.html",
                 items=items,
-                total=total
+                total=total,
             )
 
         try:
-
             with get_connection() as conn:
 
-                # -------------------------------------------------
-                # POSTGRESQL FIX
-                # -------------------------------------------------
-                #
-                # DO NOT USE:
-                #
+                # IMPORTANT:
+                # PostgreSQL supports BEGIN.
+                # PostgreSQL DOES NOT support:
                 # BEGIN IMMEDIATE
-                #
-                # PostgreSQL does not support it.
-                # -------------------------------------------------
 
-                conn.execute(
-                    "BEGIN"
-                )
+                conn.execute("BEGIN")
 
                 verified = []
-
                 final_total = 0.0
 
-                # -------------------------------------------------
+                # ---------------------------------------------
                 # VERIFY STOCK
-                # -------------------------------------------------
+                # ---------------------------------------------
 
                 for item, qty, _ in items:
-
                     current = conn.execute(
                         """
                         SELECT *
                         FROM products
                         WHERE id=?
                         """,
-                        (item["id"],)
+                        (item["id"],),
                     ).fetchone()
 
                     if (
                         not current
                         or current["stock"] < qty
                     ):
-
                         raise ValueError(
                             f'Insufficient stock for {item["name"]}.'
                         )
 
                     line = (
-                        current["price"]
-                        * qty
+                        current["price"] * qty
                     )
 
                     final_total += line
@@ -2132,13 +1895,13 @@ def checkout():
                         (
                             current,
                             qty,
-                            line
+                            line,
                         )
                     )
 
-                # -------------------------------------------------
+                # ---------------------------------------------
                 # CREATE ORDER
-                # -------------------------------------------------
+                # ---------------------------------------------
 
                 conn.execute(
                     """
@@ -2168,41 +1931,38 @@ def checkout():
                         address,
                         note,
                         final_total,
-                        "Pending"
-                    )
+                        "Pending",
+                    ),
                 )
 
-                # -------------------------------------------------
+                # ---------------------------------------------
                 # GET ORDER ID
-                # -------------------------------------------------
+                # ---------------------------------------------
 
                 order = conn.execute(
                     """
-                    SELECT
-                        id
+                    SELECT id
                     FROM orders
                     WHERE user_id=?
                     ORDER BY created_at DESC,
                              id DESC
                     LIMIT 1
                     """,
-                    (g.user["id"],)
+                    (g.user["id"],),
                 ).fetchone()
 
                 if not order:
-
                     raise RuntimeError(
                         "Order was created but its ID could not be loaded."
                     )
 
                 order_id = order["id"]
 
-                # -------------------------------------------------
+                # ---------------------------------------------
                 # ORDER ITEMS + STOCK
-                # -------------------------------------------------
+                # ---------------------------------------------
 
                 for current, qty, _ in verified:
-
                     conn.execute(
                         """
                         INSERT INTO order_items(
@@ -2225,8 +1985,8 @@ def checkout():
                             current["id"],
                             current["name"],
                             current["price"],
-                            qty
-                        )
+                            qty,
+                        ),
                     )
 
                     updated = conn.execute(
@@ -2239,52 +1999,48 @@ def checkout():
                         (
                             qty,
                             current["id"],
-                            qty
-                        )
+                            qty,
+                        ),
                     )
 
                     if hasattr(
                         updated,
-                        "rowcount"
+                        "rowcount",
                     ):
-
                         if updated.rowcount != 1:
-
                             raise ValueError(
                                 f'Insufficient stock for {current["name"]}.'
                             )
 
-                # -------------------------------------------------
+                # ---------------------------------------------
                 # COMMIT
-                # -------------------------------------------------
+                # ---------------------------------------------
 
                 conn.commit()
 
-            # -----------------------------------------------------
-            # CLEAR CART ONLY AFTER SUCCESS
-            # -----------------------------------------------------
+            # ---------------------------------------------
+            # CLEAR CART AFTER SUCCESS ONLY
+            # ---------------------------------------------
 
             session["cart"] = {}
-
             session.modified = True
 
             flash(
                 "Order placed successfully.",
-                "success"
+                "success",
             )
 
             return redirect(
                 url_for(
                     "order_confirmation",
-                    order_id=order_id
+                    order_id=order_id,
                 )
             )
 
         except ValueError as exc:
-
             flash(
                 str(exc),
-                "danger"
+                "danger",
             )
 
             return redirect(
@@ -2292,14 +2048,13 @@ def checkout():
             )
 
         except Exception:
-
             app.logger.exception(
                 "Checkout failed."
             )
 
             flash(
                 "We could not place your order right now. Please try again.",
-                "danger"
+                "danger",
             )
 
             return redirect(
@@ -2309,7 +2064,7 @@ def checkout():
     return render_template(
         "checkout.html",
         items=items,
-        total=total
+        total=total,
     )
 
 
@@ -2322,7 +2077,6 @@ def checkout():
 )
 @login_required
 def order_confirmation(order_id):
-
     order = fetch_one(
         """
         SELECT *
@@ -2332,12 +2086,11 @@ def order_confirmation(order_id):
         """,
         (
             order_id,
-            g.user["id"]
-        )
+            g.user["id"],
+        ),
     )
 
     if not order:
-
         abort(404)
 
     items = fetch_all(
@@ -2346,7 +2099,7 @@ def order_confirmation(order_id):
         FROM order_items
         WHERE order_id=?
         """,
-        (order_id,)
+        (order_id,),
     )
 
     return render_template(
@@ -2356,9 +2109,9 @@ def order_confirmation(order_id):
         order_whatsapp_url=wa_link(
             build_order_whatsapp(
                 order,
-                "Hello"
+                "Hello",
             )
-        )
+        ),
     )
 
 
@@ -2368,14 +2121,13 @@ def order_confirmation(order_id):
 
 @app.route(
     "/setup",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @app.route(
     "/admin/setup",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 def setup():
-
     if fetch_one(
         """
         SELECT id
@@ -2384,65 +2136,63 @@ def setup():
         LIMIT 1
         """
     ):
-
         return render_template(
             "setup.html",
-            completed=True
+            completed=True,
         )
 
     if request.method == "POST":
-
         name = request.form.get(
             "name",
-            ""
+            "",
         ).strip()
 
         email = request.form.get(
             "email",
-            ""
+            "",
         ).strip().lower()
 
         password = request.form.get(
             "password",
-            ""
+            "",
         )
 
         confirm = request.form.get(
             "confirm_password",
-            ""
+            "",
         )
 
         store_name = (
             request.form.get(
                 "store_name",
-                ""
+                "",
             ).strip()[:100]
             or "BIB-STORE"
         )
 
         store_email = request.form.get(
             "store_email",
-            ""
+            "",
         ).strip()[:160]
 
         phone = request.form.get(
             "phone",
-            ""
+            "",
         ).strip()[:50]
 
         whatsapp = request.form.get(
             "whatsapp",
-            ""
+            "",
         ).strip()[:50]
 
         address = request.form.get(
             "address",
-            ""
+            "",
         ).strip()[:250]
 
         description = request.form.get(
             "description",
-            ""
+            "",
         ).strip()[:500]
 
         if (
@@ -2451,34 +2201,31 @@ def setup():
             or len(password) < 8
             or password != confirm
         ):
-
             flash(
                 "Enter a valid name/email and a password of at least 8 characters. Passwords must match.",
-                "danger"
+                "danger",
             )
 
             return render_template(
                 "setup.html",
-                completed=False
+                completed=False,
             )
 
         if (
             store_email
             and not valid_email(store_email)
         ):
-
             flash(
                 "Please enter a valid store email address.",
-                "danger"
+                "danger",
             )
 
             return render_template(
                 "setup.html",
-                completed=False
+                completed=False,
             )
 
         try:
-
             with get_connection() as conn:
 
                 if conn.execute(
@@ -2489,10 +2236,9 @@ def setup():
                     LIMIT 1
                     """
                 ).fetchone():
-
                     return render_template(
                         "setup.html",
-                        completed=True
+                        completed=True,
                     )
 
                 conn.execute(
@@ -2515,23 +2261,21 @@ def setup():
                         email,
                         generate_password_hash(
                             password
-                        )
-                    )
+                        ),
+                    ),
                 )
 
                 admin = conn.execute(
                     """
-                    SELECT
-                        id
+                    SELECT id
                     FROM users
                     WHERE email=?
                     AND is_admin=1
                     """,
-                    (email,)
+                    (email,),
                 ).fetchone()
 
                 if not admin:
-
                     raise RuntimeError(
                         "Administrator account could not be created."
                     )
@@ -2541,67 +2285,53 @@ def setup():
                 conn.commit()
 
         except Exception:
-
             app.logger.exception(
                 "Store setup failed."
             )
 
             flash(
                 "Store setup could not be completed. Please try again.",
-                "danger"
+                "danger",
             )
 
             return render_template(
                 "setup.html",
-                completed=False
+                completed=False,
             )
 
         update_settings(
             {
-                "store_name":
-                    store_name,
-
-                "store_email":
-                    store_email,
-
-                "phone":
-                    phone,
-
-                "whatsapp":
-                    whatsapp,
-
-                "address":
-                    address,
-
-                "description":
+                "store_name": store_name,
+                "store_email": store_email,
+                "phone": phone,
+                "whatsapp": whatsapp,
+                "address": address,
+                "description": (
                     description
                     or get_store().get(
                         "description",
-                        ""
+                        "",
                     )
+                ),
             }
         )
 
         session.clear()
-
         session["user_id"] = admin_id
-
         session.permanent = True
 
         flash(
             "Store setup complete. You are now the store administrator.",
-            "success"
+            "success",
         )
 
         return redirect(
-            url_for(
-                "admin_dashboard"
-            )
+            url_for("admin_dashboard")
         )
 
     return render_template(
         "setup.html",
-        completed=False
+        completed=False,
     )
 
 
@@ -2612,66 +2342,57 @@ def setup():
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-
     stats = {
+        "products": fetch_one(
+            "SELECT COUNT(*) c FROM products"
+        )["c"],
 
-        "products":
-            fetch_one(
-                "SELECT COUNT(*) c FROM products"
-            )["c"],
+        "orders": fetch_one(
+            "SELECT COUNT(*) c FROM orders"
+        )["c"],
 
-        "orders":
-            fetch_one(
-                "SELECT COUNT(*) c FROM orders"
-            )["c"],
+        "customers": fetch_one(
+            """
+            SELECT COUNT(*) c
+            FROM users
+            WHERE is_admin=0
+            """
+        )["c"],
 
-        "customers":
-            fetch_one(
-                """
-                SELECT COUNT(*) c
-                FROM users
-                WHERE is_admin=0
-                """
-            )["c"],
+        "sales": fetch_one(
+            """
+            SELECT COALESCE(
+                SUM(total),
+                0
+            ) c
+            FROM orders
+            WHERE status != 'Cancelled'
+            """
+        )["c"],
 
-        "sales":
-            fetch_one(
-                """
-                SELECT COALESCE(
-                    SUM(total),
-                    0
-                ) c
-                FROM orders
-                WHERE status != 'Cancelled'
-                """
-            )["c"],
+        "pending": fetch_one(
+            """
+            SELECT COUNT(*) c
+            FROM orders
+            WHERE status='Pending'
+            """
+        )["c"],
 
-        "pending":
-            fetch_one(
-                """
-                SELECT COUNT(*) c
-                FROM orders
-                WHERE status='Pending'
-                """
-            )["c"],
+        "delivered": fetch_one(
+            """
+            SELECT COUNT(*) c
+            FROM orders
+            WHERE status='Delivered'
+            """
+        )["c"],
 
-        "delivered":
-            fetch_one(
-                """
-                SELECT COUNT(*) c
-                FROM orders
-                WHERE status='Delivered'
-                """
-            )["c"],
-
-        "low_stock":
-            fetch_one(
-                """
-                SELECT COUNT(*) c
-                FROM products
-                WHERE stock BETWEEN 1 AND 5
-                """
-            )["c"]
+        "low_stock": fetch_one(
+            """
+            SELECT COUNT(*) c
+            FROM products
+            WHERE stock BETWEEN 1 AND 5
+            """
+        )["c"],
     }
 
     recent_orders = fetch_all(
@@ -2723,16 +2444,14 @@ def admin_dashboard():
     )
 
     status_counts = {
-        s:
-            fetch_one(
-                """
-                SELECT COUNT(*) c
-                FROM orders
-                WHERE status=?
-                """,
-                (s,)
-            )["c"]
-
+        s: fetch_one(
+            """
+            SELECT COUNT(*) c
+            FROM orders
+            WHERE status=?
+            """,
+            (s,),
+        )["c"]
         for s in STATUS_OPTIONS
     }
 
@@ -2756,7 +2475,7 @@ def admin_dashboard():
         low_stock=low_stock,
         top_products=top_products,
         status_counts=status_counts,
-        recent_customers=recent_customers
+        recent_customers=recent_customers,
     )
 
 
@@ -2767,7 +2486,6 @@ def admin_dashboard():
 @app.route("/admin/products")
 @admin_required
 def admin_products():
-
     products = fetch_all(
         """
         SELECT *
@@ -2778,7 +2496,7 @@ def admin_products():
 
     return render_template(
         "admin_products.html",
-        products=products
+        products=products,
     )
 
 
@@ -2787,9 +2505,7 @@ def admin_products():
 )
 @admin_required
 def upload_product_image():
-
     try:
-
         uploaded = request.files.get(
             "image"
         )
@@ -2799,28 +2515,24 @@ def upload_product_image():
         )
 
         if not filename:
-
             return {
                 "ok": False,
-                "message":
-                    "Please choose an image."
+                "message": "Please choose an image.",
             }, 400
 
         return {
             "ok": True,
             "filename": filename,
-            "url":
-                url_for(
-                    "uploaded_file",
-                    filename=filename
-                )
+            "url": url_for(
+                "uploaded_file",
+                filename=filename,
+            ),
         }
 
     except ValueError as exc:
-
         return {
             "ok": False,
-            "message": str(exc)
+            "message": str(exc),
         }, 400
 
 
@@ -2830,43 +2542,40 @@ def upload_product_image():
 
 @app.route(
     "/admin/products/add",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @admin_required
 def add_product():
-
     if request.method == "POST":
-
         name = request.form.get(
             "name",
-            ""
+            "",
         ).strip()
 
         category = request.form.get(
             "category",
-            ""
+            "",
         ).strip()
 
         description = request.form.get(
             "description",
-            ""
+            "",
         ).strip()
 
         image = None
 
         try:
-
             price = parse_price(
                 request.form.get(
                     "price",
-                    ""
+                    "",
                 )
             )
 
             stock = parse_stock(
                 request.form.get(
                     "stock",
-                    ""
+                    "",
                 )
             )
 
@@ -2874,7 +2583,6 @@ def add_product():
                 len(name) < 2
                 or category not in get_categories()
             ):
-
                 raise ValueError(
                     "Please provide a valid product name and category."
                 )
@@ -2882,36 +2590,29 @@ def add_product():
             image = (
                 request.form.get(
                     "uploaded_image",
-                    ""
+                    "",
                 ).strip()
                 or None
             )
 
             if not image:
-
                 image = save_upload(
-                    request.files.get(
-                        "image"
-                    )
+                    request.files.get("image")
                 )
 
             elif (
                 Path(image).name != image
                 or not (
                     Path(
-                        app.config[
-                            "UPLOAD_FOLDER"
-                        ]
+                        app.config["UPLOAD_FOLDER"]
                     ) / image
                 ).is_file()
             ):
-
                 raise ValueError(
                     "The uploaded product image could not be found. Please choose it again."
                 )
 
             with get_connection() as conn:
-
                 conn.execute(
                     """
                     INSERT INTO products(
@@ -2937,34 +2638,28 @@ def add_product():
                         price,
                         stock,
                         description,
-                        image
-                    )
+                        image,
+                    ),
                 )
 
                 conn.commit()
 
             flash(
                 "Product added successfully.",
-                "success"
+                "success",
             )
 
             return redirect(
-                url_for(
-                    "admin_products"
-                )
+                url_for("admin_products")
             )
 
         except ValueError as exc:
-
             if image:
-
-                delete_upload(
-                    image
-                )
+                delete_upload(image)
 
             flash(
                 str(exc),
-                "danger"
+                "danger",
             )
 
     return render_template(
@@ -2978,56 +2673,52 @@ def add_product():
 
 @app.route(
     "/admin/products/<int:product_id>/edit",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @admin_required
 def edit_product(product_id):
-
     item = fetch_one(
         """
         SELECT *
         FROM products
         WHERE id=?
         """,
-        (product_id,)
+        (product_id,),
     )
 
     if not item:
-
         abort(404)
 
     if request.method == "POST":
-
         name = request.form.get(
             "name",
-            ""
+            "",
         ).strip()
 
         category = request.form.get(
             "category",
-            ""
+            "",
         ).strip()
 
         description = request.form.get(
             "description",
-            ""
+            "",
         ).strip()
 
         new_image = None
 
         try:
-
             price = parse_price(
                 request.form.get(
                     "price",
-                    ""
+                    "",
                 )
             )
 
             stock = parse_stock(
                 request.form.get(
                     "stock",
-                    ""
+                    "",
                 )
             )
 
@@ -3035,7 +2726,6 @@ def edit_product(product_id):
                 len(name) < 2
                 or category not in get_categories()
             ):
-
                 raise ValueError(
                     "Please provide a valid product name and category."
                 )
@@ -3043,7 +2733,7 @@ def edit_product(product_id):
             uploaded_image = (
                 request.form.get(
                     "uploaded_image",
-                    ""
+                    "",
                 ).strip()
                 or None
             )
@@ -3053,7 +2743,6 @@ def edit_product(product_id):
             )
 
             if uploaded_image:
-
                 if (
                     Path(uploaded_image).name
                     != uploaded_image
@@ -3062,21 +2751,17 @@ def edit_product(product_id):
                             app.config[
                                 "UPLOAD_FOLDER"
                             ]
-                        ) / uploaded_image
+                        )
+                        / uploaded_image
                     ).is_file()
                 ):
-
                     raise ValueError(
                         "The uploaded product image could not be found. Please choose it again."
                     )
 
                 new_image = uploaded_image
 
-            elif (
-                uploaded
-                and uploaded.filename
-            ):
-
+            elif uploaded and uploaded.filename:
                 new_image = save_upload(
                     uploaded
                 )
@@ -3087,11 +2772,11 @@ def edit_product(product_id):
             )
 
             with get_connection() as conn:
-
                 conn.execute(
                     """
                     UPDATE products
-                    SET name=?,
+                    SET
+                        name=?,
                         category=?,
                         price=?,
                         stock=?,
@@ -3106,8 +2791,8 @@ def edit_product(product_id):
                         stock,
                         description,
                         image,
-                        product_id
-                    )
+                        product_id,
+                    ),
                 )
 
                 conn.commit()
@@ -3117,38 +2802,31 @@ def edit_product(product_id):
                 and item["image"]
                 and new_image != item["image"]
             ):
-
                 delete_upload(
                     item["image"]
                 )
 
             flash(
                 "Product updated successfully.",
-                "success"
+                "success",
             )
 
             return redirect(
-                url_for(
-                    "admin_products"
-                )
+                url_for("admin_products")
             )
 
         except ValueError as exc:
-
             if new_image:
-
-                delete_upload(
-                    new_image
-                )
+                delete_upload(new_image)
 
             flash(
                 str(exc),
-                "danger"
+                "danger",
             )
 
     return render_template(
         "edit_product.html",
-        product=item
+        product=item,
     )
 
 
@@ -3161,45 +2839,38 @@ def edit_product(product_id):
 )
 @admin_required
 def delete_product(product_id):
-
     item = fetch_one(
         """
         SELECT *
         FROM products
         WHERE id=?
         """,
-        (product_id,)
+        (product_id,),
     )
 
     if not item:
-
         abort(404)
 
     try:
-
         with get_connection() as conn:
-
             conn.execute(
                 """
                 DELETE FROM products
                 WHERE id=?
                 """,
-                (product_id,)
+                (product_id,),
             )
 
             conn.commit()
 
     except Exception:
-
         flash(
             "This product is attached to an order. Edit it or set stock to 0 instead.",
-            "danger"
+            "danger",
         )
 
         return redirect(
-            url_for(
-                "admin_products"
-            )
+            url_for("admin_products")
         )
 
     delete_upload(
@@ -3208,7 +2879,7 @@ def delete_product(product_id):
 
     flash(
         "Product deleted.",
-        "success"
+        "success",
     )
 
     return redirect(
@@ -3223,14 +2894,12 @@ def delete_product(product_id):
 @app.route("/admin/orders")
 @admin_required
 def admin_orders():
-
     status = request.args.get(
         "status",
-        ""
+        "",
     ).strip()
 
     if status in STATUS_OPTIONS:
-
         orders = fetch_all(
             """
             SELECT
@@ -3242,11 +2911,10 @@ def admin_orders():
             WHERE o.status=?
             ORDER BY o.created_at DESC
             """,
-            (status,)
+            (status,),
         )
 
     else:
-
         orders = fetch_all(
             """
             SELECT
@@ -3262,7 +2930,7 @@ def admin_orders():
     return render_template(
         "admin_orders.html",
         orders=orders,
-        selected_status=status
+        selected_status=status,
     )
 
 
@@ -3272,11 +2940,10 @@ def admin_orders():
 
 @app.route(
     "/admin/orders/<int:order_id>",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @admin_required
 def admin_order_details(order_id):
-
     order = fetch_one(
         """
         SELECT
@@ -3287,31 +2954,26 @@ def admin_order_details(order_id):
             ON u.id=o.user_id
         WHERE o.id=?
         """,
-        (order_id,)
+        (order_id,),
     )
 
     if not order:
-
         abort(404)
 
     if request.method == "POST":
-
         status = request.form.get(
             "status",
-            ""
+            "",
         )
 
         if status not in STATUS_OPTIONS:
-
             flash(
                 "Invalid order status.",
-                "danger"
+                "danger",
             )
 
         else:
-
             with get_connection() as conn:
-
                 conn.execute(
                     """
                     UPDATE orders
@@ -3320,21 +2982,21 @@ def admin_order_details(order_id):
                     """,
                     (
                         status,
-                        order_id
-                    )
+                        order_id,
+                    ),
                 )
 
                 conn.commit()
 
             flash(
                 "Order status updated.",
-                "success"
+                "success",
             )
 
             return redirect(
                 url_for(
                     "admin_order_details",
-                    order_id=order_id
+                    order_id=order_id,
                 )
             )
 
@@ -3344,7 +3006,7 @@ def admin_order_details(order_id):
         FROM order_items
         WHERE order_id=?
         """,
-        (order_id,)
+        (order_id,),
     )
 
     return render_template(
@@ -3354,9 +3016,9 @@ def admin_order_details(order_id):
         order_whatsapp_url=wa_link(
             build_order_whatsapp(
                 order,
-                "Hello"
+                "Hello",
             )
-        )
+        ),
     )
 
 
@@ -3367,7 +3029,6 @@ def admin_order_details(order_id):
 @app.route("/admin/customers")
 @admin_required
 def admin_customers():
-
     customers = fetch_all(
         """
         SELECT
@@ -3397,14 +3058,13 @@ def admin_customers():
 
     return render_template(
         "admin_customers.html",
-        customers=customers
+        customers=customers,
     )
 
 
 @app.route("/admin/customer-access")
 @admin_required
 def admin_customer_access():
-
     customers = fetch_all(
         """
         SELECT
@@ -3434,7 +3094,7 @@ def admin_customer_access():
 
     return render_template(
         "admin_customer_access.html",
-        customers=customers
+        customers=customers,
     )
 
 
@@ -3447,9 +3107,7 @@ def admin_customer_access():
 )
 @admin_required
 def upload_store_logo():
-
     try:
-
         uploaded = request.files.get(
             "logo"
         )
@@ -3459,28 +3117,24 @@ def upload_store_logo():
         )
 
         if not filename:
-
             return {
                 "ok": False,
-                "message":
-                    "Please choose a logo image."
+                "message": "Please choose a logo image.",
             }, 400
 
         return {
             "ok": True,
             "filename": filename,
-            "url":
-                url_for(
-                    "uploaded_file",
-                    filename=filename
-                )
+            "url": url_for(
+                "uploaded_file",
+                filename=filename,
+            ),
         }
 
     except ValueError as exc:
-
         return {
             "ok": False,
-            "message": str(exc)
+            "message": str(exc),
         }, 400
 
 
@@ -3490,147 +3144,142 @@ def upload_store_logo():
 
 @app.route(
     "/admin/settings",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @admin_required
 def admin_settings():
-
     if request.method == "POST":
-
         color = request.form.get(
             "primary_color",
-            "#6d4aff"
+            "#6d4aff",
         ).strip()
 
         if not HEX_RE.match(color):
-
             color = "#6d4aff"
 
         values = {
-
-            "store_name":
+            "store_name": (
                 request.form.get(
                     "store_name",
-                    ""
+                    "",
                 ).strip()[:100]
-                or "BIB-STORE",
+                or "BIB-STORE"
+            ),
 
-            "store_email":
-                request.form.get(
-                    "store_email",
-                    ""
-                ).strip()[:160],
+            "store_email": request.form.get(
+                "store_email",
+                "",
+            ).strip()[:160],
 
-            "phone":
-                request.form.get(
-                    "phone",
-                    ""
-                ).strip()[:50],
+            "phone": request.form.get(
+                "phone",
+                "",
+            ).strip()[:50],
 
-            "whatsapp":
-                request.form.get(
-                    "whatsapp",
-                    ""
-                ).strip()[:50],
+            "whatsapp": request.form.get(
+                "whatsapp",
+                "",
+            ).strip()[:50],
 
-            "address":
-                request.form.get(
-                    "address",
-                    ""
-                ).strip()[:250],
+            "address": request.form.get(
+                "address",
+                "",
+            ).strip()[:250],
 
-            "currency":
+            "currency": (
                 request.form.get(
                     "currency",
-                    "₦"
+                    "₦",
                 ).strip()[:5]
-                or "₦",
+                or "₦"
+            ),
 
-            "description":
-                request.form.get(
-                    "description",
-                    ""
-                ).strip()[:500],
+            "description": request.form.get(
+                "description",
+                "",
+            ).strip()[:500],
 
-            "primary_color":
-                color,
+            "primary_color": color,
 
-            "announcement_text":
-                request.form.get(
-                    "announcement_text",
-                    ""
-                ).strip()[:220],
+            "announcement_text": request.form.get(
+                "announcement_text",
+                "",
+            ).strip()[:220],
 
-            "show_announcement":
+            "show_announcement": (
                 "1"
                 if request.form.get(
                     "show_announcement"
                 ) == "1"
-                else "0",
+                else "0"
+            ),
 
-            "show_whatsapp":
+            "show_whatsapp": (
                 "1"
                 if request.form.get(
                     "show_whatsapp"
                 ) == "1"
-                else "0",
+                else "0"
+            ),
 
-            "whatsapp_message":
-                request.form.get(
-                    "whatsapp_message",
-                    ""
-                ).strip()[:500],
+            "whatsapp_message": request.form.get(
+                "whatsapp_message",
+                "",
+            ).strip()[:500],
 
-            "footer_text":
-                request.form.get(
-                    "footer_text",
-                    ""
-                ).strip()[:300],
+            "footer_text": request.form.get(
+                "footer_text",
+                "",
+            ).strip()[:300],
 
-            "nav_home":
+            "nav_home": (
                 "1"
                 if request.form.get(
                     "nav_home"
                 ) == "1"
-                else "0",
+                else "0"
+            ),
 
-            "nav_shop":
+            "nav_shop": (
                 "1"
                 if request.form.get(
                     "nav_shop"
                 ) == "1"
-                else "0",
+                else "0"
+            ),
 
-            "nav_categories":
+            "nav_categories": (
                 "1"
                 if request.form.get(
                     "nav_categories"
                 ) == "1"
-                else "0",
+                else "0"
+            ),
 
-            "nav_about":
+            "nav_about": (
                 "1"
                 if request.form.get(
                     "nav_about"
                 ) == "1"
-                else "0",
+                else "0"
+            ),
 
-            "nav_contact":
+            "nav_contact": (
                 "1"
                 if request.form.get(
                     "nav_contact"
                 ) == "1"
                 else "0"
+            ),
         }
 
         try:
-
             current_store = get_store()
 
             uploaded_logo = (
                 request.form.get(
                     "uploaded_logo",
-                    ""
+                    "",
                 ).strip()
                 or None
             )
@@ -3643,11 +3292,10 @@ def admin_settings():
 
             old_logo = current_store.get(
                 "logo",
-                ""
+                "",
             )
 
             if uploaded_logo:
-
                 if (
                     Path(uploaded_logo).name
                     != uploaded_logo
@@ -3656,10 +3304,10 @@ def admin_settings():
                             app.config[
                                 "UPLOAD_FOLDER"
                             ]
-                        ) / uploaded_logo
+                        )
+                        / uploaded_logo
                     ).is_file()
                 ):
-
                     raise ValueError(
                         "The uploaded store logo could not be found. Please choose it again."
                     )
@@ -3670,43 +3318,30 @@ def admin_settings():
                     old_logo
                     and old_logo != uploaded_logo
                 ):
-
-                    delete_upload(
-                        old_logo
-                    )
+                    delete_upload(old_logo)
 
             elif remove_logo and old_logo:
-
                 values["logo"] = ""
-
-                delete_upload(
-                    old_logo
-                )
+                delete_upload(old_logo)
 
             else:
-
                 values["logo"] = old_logo
 
-            update_settings(
-                values
-            )
+            update_settings(values)
 
             flash(
                 "Store settings saved successfully.",
-                "success"
+                "success",
             )
 
         except ValueError as exc:
-
             flash(
                 str(exc),
-                "danger"
+                "danger",
             )
 
         return redirect(
-            url_for(
-                "admin_settings"
-            )
+            url_for("admin_settings")
         )
 
     return render_template(
@@ -3720,20 +3355,17 @@ def admin_settings():
 
 @app.route(
     "/admin/administrators",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @admin_required
 def admin_administrators():
-
     flash(
         "BIB-STORE is configured for one administrator account only.",
-        "info"
+        "info",
     )
 
     return redirect(
-        url_for(
-            "admin_profile"
-        )
+        url_for("admin_profile")
     )
 
 
@@ -3743,61 +3375,55 @@ def admin_administrators():
 
 @app.route(
     "/admin/profile",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 @admin_required
 def admin_profile():
-
     if request.method == "POST":
-
         name = request.form.get(
             "name",
-            ""
+            "",
         ).strip()
 
         current = request.form.get(
             "current_password",
-            ""
+            "",
         )
 
         new_password = request.form.get(
             "new_password",
-            ""
+            "",
         )
 
         confirm = request.form.get(
             "confirm_password",
-            ""
+            "",
         )
 
         if len(name) < 2:
-
             flash(
                 "Please enter a valid name.",
-                "danger"
+                "danger",
             )
 
         else:
-
             user = fetch_one(
                 """
                 SELECT *
                 FROM users
                 WHERE id=?
                 """,
-                (g.user["id"],)
+                (g.user["id"],),
             )
 
             if new_password:
-
                 if not check_password_hash(
                     user["password"],
-                    current
+                    current,
                 ):
-
                     flash(
                         "Current password is incorrect.",
-                        "danger"
+                        "danger",
                     )
 
                     return render_template(
@@ -3808,10 +3434,9 @@ def admin_profile():
                     len(new_password) < 8
                     or new_password != confirm
                 ):
-
                     flash(
                         "New password must be at least 8 characters and match confirmation.",
-                        "danger"
+                        "danger",
                     )
 
                     return render_template(
@@ -3819,11 +3444,11 @@ def admin_profile():
                     )
 
                 with get_connection() as conn:
-
                     conn.execute(
                         """
                         UPDATE users
-                        SET name=?,
+                        SET
+                            name=?,
                             password=?
                         WHERE id=?
                         """,
@@ -3832,16 +3457,14 @@ def admin_profile():
                             generate_password_hash(
                                 new_password
                             ),
-                            g.user["id"]
-                        )
+                            g.user["id"],
+                        ),
                     )
 
                     conn.commit()
 
             else:
-
                 with get_connection() as conn:
-
                     conn.execute(
                         """
                         UPDATE users
@@ -3850,21 +3473,19 @@ def admin_profile():
                         """,
                         (
                             name,
-                            g.user["id"]
-                        )
+                            g.user["id"],
+                        ),
                     )
 
                     conn.commit()
 
             flash(
                 "Administrator profile updated.",
-                "success"
+                "success",
             )
 
             return redirect(
-                url_for(
-                    "admin_profile"
-                )
+                url_for("admin_profile")
             )
 
     return render_template(
@@ -3878,7 +3499,6 @@ def admin_profile():
 
 @app.errorhandler(403)
 def forbidden(error):
-
     return render_template(
         "403.html"
     ), 403
@@ -3886,7 +3506,6 @@ def forbidden(error):
 
 @app.errorhandler(404)
 def not_found(error):
-
     return render_template(
         "404.html"
     ), 404
@@ -3896,7 +3515,6 @@ def not_found(error):
     RequestEntityTooLarge
 )
 def too_large(error):
-
     return render_template(
         "error_file_too_large.html"
     ), 413
@@ -3904,7 +3522,6 @@ def too_large(error):
 
 @app.errorhandler(500)
 def server_error(error):
-
     app.logger.exception(
         "UNHANDLED SERVER ERROR"
     )
@@ -3919,11 +3536,10 @@ def server_error(error):
 # =========================================================
 
 if __name__ == "__main__":
-
     port = int(
         os.environ.get(
             "PORT",
-            5000
+            5000,
         )
     )
 
@@ -3933,7 +3549,8 @@ if __name__ == "__main__":
         debug=(
             os.environ.get(
                 "FLASK_DEBUG",
-                "0"
-            ) == "1"
-        )
+                "0",
+            )
+            == "1"
+        ),
     )
