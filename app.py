@@ -48,7 +48,6 @@ from database import (
 # =========================================================
 
 app = Flask(__name__)
-
 app.config.from_object(Config)
 
 csrf = CSRFProtect(app)
@@ -68,18 +67,12 @@ HEX_RE = re.compile(
     r"^#[0-9a-fA-F]{6}$"
 )
 
+
 # =========================================================
 # TELEGRAM NOTIFICATION
 # =========================================================
 
 def send_telegram_message(message):
-    """
-    Sends a Telegram notification.
-
-    If Telegram is not configured, this function simply
-    returns False. Registration will NOT fail if the
-    notification cannot be sent.
-    """
 
     bot_token = os.environ.get(
         "TELEGRAM_BOT_TOKEN",
@@ -105,9 +98,10 @@ def send_telegram_message(message):
     }
 
     try:
-        data = json.dumps(payload).encode(
-            "utf-8"
-        )
+
+        data = json.dumps(
+            payload
+        ).encode("utf-8")
 
         req = Request(
             url,
@@ -138,14 +132,12 @@ def send_telegram_message(message):
 
         return False
 
+
 def notify_new_customer(
     name,
     email,
     created_at
 ):
-    """
-    Notify the store owner about a new customer.
-    """
 
     store = get_store()
 
@@ -177,6 +169,7 @@ def get_store():
 
 
 def whatsapp_number(raw):
+
     return re.sub(
         r"\D",
         "",
@@ -187,7 +180,9 @@ def whatsapp_number(raw):
 def wa_link(message):
 
     number = whatsapp_number(
-        get_store().get("whatsapp")
+        get_store().get(
+            "whatsapp"
+        )
     )
 
     if not number:
@@ -206,10 +201,12 @@ def build_order_whatsapp(
 
     store = get_store()
 
-    message = store.get(
+    template = store.get(
         "whatsapp_message",
         ""
-    ).replace(
+    )
+
+    message = template.replace(
         "{{store_name}}",
         store.get(
             "store_name",
@@ -222,10 +219,7 @@ def build_order_whatsapp(
         str(order["id"])
     )
 
-    if message == store.get(
-        "whatsapp_message",
-        ""
-    ):
+    if message == template:
 
         message = (
             f'{prefix} '
@@ -257,8 +251,11 @@ def inject_globals():
 
     return {
         "store": store,
+
         "cart_count": cart_count,
+
         "categories": Config.CATEGORIES,
+
         "status_options": STATUS_OPTIONS,
 
         "whatsapp_url": wa_link(
@@ -320,7 +317,6 @@ def load_user():
         )
 
         if not g.user:
-
             session.clear()
 
 
@@ -405,7 +401,6 @@ def admin_required(view):
             )
 
         if not g.user["is_admin"]:
-
             abort(403)
 
         return view(
@@ -500,7 +495,6 @@ def allowed_file(filename):
 def save_upload(file):
 
     if not file or not file.filename:
-
         return None
 
     if not allowed_file(
@@ -568,7 +562,6 @@ def delete_upload(filename):
     try:
 
         if path.exists():
-
             path.unlink()
 
     except OSError:
@@ -702,7 +695,8 @@ def product_query():
             "price DESC",
 
         "name":
-           "LOWER(name) ASC",
+            "LOWER(name) ASC",
+
         "oldest":
             "created_at ASC",
 
@@ -806,7 +800,9 @@ def categories():
     )
 
 
-@app.route("/product/<int:product_id>")
+@app.route(
+    "/product/<int:product_id>"
+)
 def product(product_id):
 
     item = fetch_one(
@@ -819,7 +815,6 @@ def product(product_id):
     )
 
     if not item:
-
         abort(404)
 
     related = fetch_all(
@@ -844,7 +839,9 @@ def product(product_id):
     )
 
 
-@app.route("/uploads/<path:filename>")
+@app.route(
+    "/uploads/<path:filename>"
+)
 def uploaded_file(filename):
 
     return send_from_directory(
@@ -866,7 +863,11 @@ def register():
     if g.user:
 
         return redirect(
-            url_for("dashboard")
+            url_for(
+                "admin_dashboard"
+            )
+            if g.user["is_admin"]
+            else url_for("dashboard")
         )
 
     if request.method == "POST":
@@ -891,6 +892,10 @@ def register():
             ""
         )
 
+        # -------------------------------------------------
+        # VALIDATION
+        # -------------------------------------------------
+
         if (
             len(name) < 2
             or len(name) > 100
@@ -901,42 +906,76 @@ def register():
                 "danger"
             )
 
-        elif not valid_email(email):
+            return render_template(
+                "register.html"
+            )
+
+        if not valid_email(email):
 
             flash(
                 "Please enter a valid email address.",
                 "danger"
             )
 
-        elif len(password) < 8:
+            return render_template(
+                "register.html"
+            )
+
+        if len(password) < 8:
 
             flash(
                 "Password must be at least 8 characters.",
                 "danger"
             )
 
-        elif password != confirm:
+            return render_template(
+                "register.html"
+            )
+
+        if password != confirm:
 
             flash(
                 "Passwords do not match.",
                 "danger"
             )
 
-        elif fetch_one(
-            "SELECT id FROM users WHERE email = ?",
-            (email,)
-        ):
-
-            flash(
-                "An account with that email already exists.",
-                "danger"
+            return render_template(
+                "register.html"
             )
 
-        else:
+        # -------------------------------------------------
+        # CHECK EXISTING CUSTOMER
+        # -------------------------------------------------
 
-            # ---------------------------------------------
-            # CREATE CUSTOMER
-            # ---------------------------------------------
+        existing_user = fetch_one(
+            """
+            SELECT id
+            FROM users
+            WHERE email = ?
+            """,
+            (email,)
+        )
+
+        if existing_user:
+
+            flash(
+                "An account with that email already exists. Please log in.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("login")
+            )
+
+        # -------------------------------------------------
+        # CREATE CUSTOMER
+        # -------------------------------------------------
+
+        hashed_password = generate_password_hash(
+            password
+        )
+
+        try:
 
             with get_connection() as conn:
 
@@ -958,38 +997,62 @@ def register():
                     (
                         name,
                         email,
-                        generate_password_hash(
-                            password
-                        )
+                        hashed_password
                     )
                 )
 
                 user_id = cur.lastrowid
 
-                created_at = conn.execute(
+                if not user_id:
+
+                    raise RuntimeError(
+                        "Customer account could not be created."
+                    )
+
+                user = conn.execute(
                     """
-                    SELECT created_at
+                    SELECT
+                        id,
+                        created_at
                     FROM users
                     WHERE id = ?
                     """,
                     (user_id,)
-                ).fetchone()["created_at"]
+                ).fetchone()
+
+                if not user:
+
+                    raise RuntimeError(
+                        "Customer account was created but could not be loaded."
+                    )
+
+                created_at = user[
+                    "created_at"
+                ]
 
                 conn.commit()
 
-            # ---------------------------------------------
-            # SEND NEW CUSTOMER NOTIFICATION
-            # ---------------------------------------------
+            # -------------------------------------------------
+            # TELEGRAM NOTIFICATION
+            # -------------------------------------------------
 
-            notify_new_customer(
-                name,
-                email,
-                created_at
-            )
+            try:
 
-            # ---------------------------------------------
+                notify_new_customer(
+                    name,
+                    email,
+                    created_at
+                )
+
+            except Exception:
+
+                app.logger.exception(
+                    "Customer notification failed."
+                )
+
+            # -------------------------------------------------
             # LOGIN CUSTOMER
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             session.clear()
 
@@ -998,12 +1061,27 @@ def register():
             session.permanent = True
 
             flash(
-                "Account created successfully.",
+                "Account created successfully! Welcome to the store.",
                 "success"
             )
 
             return redirect(
                 url_for("dashboard")
+            )
+
+        except Exception:
+
+            app.logger.exception(
+                "Customer registration failed."
+            )
+
+            flash(
+                "We could not create your account right now. Please try again.",
+                "danger"
+            )
+
+            return render_template(
+                "register.html"
             )
 
     return render_template(
@@ -1024,7 +1102,9 @@ def login():
     if g.user:
 
         return redirect(
-            url_for("admin_dashboard")
+            url_for(
+                "admin_dashboard"
+            )
             if g.user["is_admin"]
             else url_for("dashboard")
         )
@@ -1047,7 +1127,11 @@ def login():
         )
 
         user = fetch_one(
-            "SELECT * FROM users WHERE email = ?",
+            """
+            SELECT *
+            FROM users
+            WHERE email = ?
+            """,
             (email,)
         )
 
@@ -1100,7 +1184,9 @@ def admin_login():
     ):
 
         return redirect(
-            url_for("admin_dashboard")
+            url_for(
+                "admin_dashboard"
+            )
         )
 
     return redirect(
@@ -1126,10 +1212,11 @@ def admin_login_as_customer(user_id):
 
     customer = fetch_one(
         """
-        SELECT id,
-               name,
-               email,
-               is_admin
+        SELECT
+            id,
+            name,
+            email,
+            is_admin
         FROM users
         WHERE id=?
         AND is_admin=0
@@ -1145,7 +1232,9 @@ def admin_login_as_customer(user_id):
         )
 
         return redirect(
-            url_for("admin_customers")
+            url_for(
+                "admin_customers"
+            )
         )
 
     admin_id = g.user["id"]
@@ -1188,8 +1277,9 @@ def return_from_customer():
 
     admin = fetch_one(
         """
-        SELECT id,
-               is_admin
+        SELECT
+            id,
+            is_admin
         FROM users
         WHERE id=?
         AND is_admin=1
@@ -1372,7 +1462,6 @@ def order_details(order_id):
     )
 
     if not order:
-
         abort(404)
 
     items = fetch_all(
@@ -1430,7 +1519,6 @@ def cart():
             continue
 
         if qty_int <= 0:
-
             continue
 
         item = fetch_one(
@@ -1497,9 +1585,10 @@ def buy_now(product_id):
 
     item = fetch_one(
         """
-        SELECT id,
-               name,
-               stock
+        SELECT
+            id,
+            name,
+            stock
         FROM products
         WHERE id=?
         """,
@@ -1507,7 +1596,6 @@ def buy_now(product_id):
     )
 
     if not item:
-
         abort(404)
 
     if item["stock"] <= 0:
@@ -1536,7 +1624,10 @@ def buy_now(product_id):
             )
         )
 
-    except ValueError:
+    except (
+        ValueError,
+        TypeError
+    ):
 
         quantity = 1
 
@@ -1566,9 +1657,10 @@ def add_to_cart(product_id):
 
     item = fetch_one(
         """
-        SELECT id,
-               name,
-               stock
+        SELECT
+            id,
+            name,
+            stock
         FROM products
         WHERE id=?
         """,
@@ -1576,7 +1668,6 @@ def add_to_cart(product_id):
     )
 
     if not item:
-
         abort(404)
 
     if item["stock"] <= 0:
@@ -1603,7 +1694,10 @@ def add_to_cart(product_id):
             )
         )
 
-    except ValueError:
+    except (
+        ValueError,
+        TypeError
+    ):
 
         quantity = 1
 
@@ -1686,7 +1780,10 @@ def update_cart(product_id):
                 )
             )
 
-        except ValueError:
+        except (
+            ValueError,
+            TypeError
+        ):
 
             qty = 1
 
@@ -1757,6 +1854,8 @@ def clear_cart():
 
     session["cart"] = {}
 
+    session.modified = True
+
     flash(
         "Cart cleared.",
         "success"
@@ -1799,6 +1898,14 @@ def checkout():
 
     for pid, qty in cart_data.items():
 
+        try:
+            qty_int = int(qty)
+        except (
+            ValueError,
+            TypeError
+        ):
+            continue
+
         item = fetch_one(
             """
             SELECT *
@@ -1810,7 +1917,7 @@ def checkout():
 
         if (
             not item
-            or item["stock"] < int(qty)
+            or item["stock"] < qty_int
         ):
 
             flash(
@@ -1826,7 +1933,7 @@ def checkout():
 
         line = (
             item["price"]
-            * int(qty)
+            * qty_int
         )
 
         total += line
@@ -1834,7 +1941,7 @@ def checkout():
         items.append(
             (
                 item,
-                int(qty),
+                qty_int,
                 line
             )
         )
@@ -1887,7 +1994,6 @@ def checkout():
                 )
 
                 verified = []
-
                 final_total = 0.0
 
                 for item, qty, _ in items:
@@ -1959,6 +2065,12 @@ def checkout():
 
                 order_id = cur.lastrowid
 
+                if not order_id:
+
+                    raise RuntimeError(
+                        "Order could not be created."
+                    )
+
                 for current, qty, _ in verified:
 
                     conn.execute(
@@ -2005,6 +2117,8 @@ def checkout():
 
             session["cart"] = {}
 
+            session.modified = True
+
             flash(
                 "Order placed successfully.",
                 "success"
@@ -2021,6 +2135,21 @@ def checkout():
 
             flash(
                 str(exc),
+                "danger"
+            )
+
+            return redirect(
+                url_for("cart")
+            )
+
+        except Exception:
+
+            app.logger.exception(
+                "Checkout failed."
+            )
+
+            flash(
+                "We could not place your order right now. Please try again.",
                 "danger"
             )
 
@@ -2059,7 +2188,6 @@ def order_confirmation(order_id):
     )
 
     if not order:
-
         abort(404)
 
     items = fetch_all(
@@ -2199,49 +2327,73 @@ def setup():
                 completed=False
             )
 
-        with get_connection() as conn:
+        try:
 
-            if conn.execute(
-                """
-                SELECT id
-                FROM users
-                WHERE is_admin=1
-                LIMIT 1
-                """
-            ).fetchone():
+            with get_connection() as conn:
 
-                return render_template(
-                    "setup.html",
-                    completed=True
-                )
+                if conn.execute(
+                    """
+                    SELECT id
+                    FROM users
+                    WHERE is_admin=1
+                    LIMIT 1
+                    """
+                ).fetchone():
 
-            cur = conn.execute(
-                """
-                INSERT INTO users(
-                    name,
-                    email,
-                    password,
-                    is_admin
-                )
-                VALUES(
-                    ?,
-                    ?,
-                    ?,
-                    1
-                )
-                """,
-                (
-                    name,
-                    email,
-                    generate_password_hash(
-                        password
+                    return render_template(
+                        "setup.html",
+                        completed=True
+                    )
+
+                cur = conn.execute(
+                    """
+                    INSERT INTO users(
+                        name,
+                        email,
+                        password,
+                        is_admin
+                    )
+                    VALUES(
+                        ?,
+                        ?,
+                        ?,
+                        1
+                    )
+                    """,
+                    (
+                        name,
+                        email,
+                        generate_password_hash(
+                            password
+                        )
                     )
                 )
+
+                admin_id = cur.lastrowid
+
+                if not admin_id:
+
+                    raise RuntimeError(
+                        "Administrator account could not be created."
+                    )
+
+                conn.commit()
+
+        except Exception:
+
+            app.logger.exception(
+                "Store setup failed."
             )
 
-            admin_id = cur.lastrowid
+            flash(
+                "Store setup could not be completed. Please try again.",
+                "danger"
+            )
 
-            conn.commit()
+            return render_template(
+                "setup.html",
+                completed=False
+            )
 
         update_settings(
             {
@@ -2281,7 +2433,9 @@ def setup():
         )
 
         return redirect(
-            url_for("admin_dashboard")
+            url_for(
+                "admin_dashboard"
+            )
         )
 
     return render_template(
@@ -2360,8 +2514,9 @@ def admin_dashboard():
 
     recent_orders = fetch_all(
         """
-        SELECT o.*,
-               u.email
+        SELECT
+            o.*,
+            u.email
         FROM orders o
         JOIN users u
             ON u.id=o.user_id
@@ -2421,9 +2576,10 @@ def admin_dashboard():
 
     recent_customers = fetch_all(
         """
-        SELECT name,
-               email,
-               created_at
+        SELECT
+            name,
+            email,
+            created_at
         FROM users
         WHERE is_admin=0
         ORDER BY created_at DESC
@@ -2639,10 +2795,7 @@ def add_product():
         except ValueError as exc:
 
             if image:
-
-                delete_upload(
-                    image
-                )
+                delete_upload(image)
 
             flash(
                 str(exc),
@@ -2675,7 +2828,6 @@ def edit_product(product_id):
     )
 
     if not item:
-
         abort(404)
 
     if request.method == "POST":
@@ -2794,6 +2946,7 @@ def edit_product(product_id):
             if (
                 new_image
                 and item["image"]
+                and new_image != item["image"]
             ):
 
                 delete_upload(
@@ -2814,10 +2967,7 @@ def edit_product(product_id):
         except ValueError as exc:
 
             if new_image:
-
-                delete_upload(
-                    new_image
-                )
+                delete_upload(new_image)
 
             flash(
                 str(exc),
@@ -2850,7 +3000,6 @@ def delete_product(product_id):
     )
 
     if not item:
-
         abort(404)
 
     try:
@@ -2911,8 +3060,9 @@ def admin_orders():
 
         orders = fetch_all(
             """
-            SELECT o.*,
-                   u.email
+            SELECT
+                o.*,
+                u.email
             FROM orders o
             JOIN users u
                 ON u.id=o.user_id
@@ -2926,8 +3076,9 @@ def admin_orders():
 
         orders = fetch_all(
             """
-            SELECT o.*,
-                   u.email
+            SELECT
+                o.*,
+                u.email
             FROM orders o
             JOIN users u
                 ON u.id=o.user_id
@@ -2955,8 +3106,9 @@ def admin_order_details(order_id):
 
     order = fetch_one(
         """
-        SELECT o.*,
-               u.email
+        SELECT
+            o.*,
+            u.email
         FROM orders o
         JOIN users u
             ON u.id=o.user_id
@@ -2966,7 +3118,6 @@ def admin_order_details(order_id):
     )
 
     if not order:
-
         abort(404)
 
     if request.method == "POST":
@@ -3178,7 +3329,6 @@ def admin_settings():
         ).strip()
 
         if not HEX_RE.match(color):
-
             color = "#6d4aff"
 
         values = {
@@ -3405,7 +3555,9 @@ def admin_administrators():
     )
 
     return redirect(
-        url_for("admin_profile")
+        url_for(
+            "admin_profile"
+        )
     )
 
 
