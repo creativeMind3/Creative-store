@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
+from datetime import datetime
 
 from flask import (
     Flask,
@@ -264,8 +265,6 @@ def inject_globals():
         LIMIT 1
         """
     )
-
-    from datetime import datetime
 
     return {
         "store": store,
@@ -900,10 +899,6 @@ def register():
             ""
         )
 
-        # -------------------------------------------------
-        # VALIDATION
-        # -------------------------------------------------
-
         if (
             len(name) < 2
             or len(name) > 100
@@ -951,10 +946,6 @@ def register():
                 "register.html"
             )
 
-        # -------------------------------------------------
-        # CHECK EXISTING CUSTOMER
-        # -------------------------------------------------
-
         existing_user = fetch_one(
             """
             SELECT id
@@ -975,10 +966,6 @@ def register():
                 url_for("login")
             )
 
-        # -------------------------------------------------
-        # CREATE CUSTOMER
-        # -------------------------------------------------
-
         hashed_password = generate_password_hash(
             password
         )
@@ -987,7 +974,6 @@ def register():
 
             with get_connection() as conn:
 
-                # Do NOT rely on lastrowid.
                 conn.execute(
                     """
                     INSERT INTO users(
@@ -1010,7 +996,6 @@ def register():
                     )
                 )
 
-                # Retrieve the newly-created account.
                 user = conn.execute(
                     """
                     SELECT
@@ -1031,14 +1016,9 @@ def register():
                     )
 
                 user_id = user["id"]
-
                 created_at = user["created_at"]
 
                 conn.commit()
-
-            # -------------------------------------------------
-            # TELEGRAM NOTIFICATION
-            # -------------------------------------------------
 
             try:
 
@@ -1053,10 +1033,6 @@ def register():
                 app.logger.exception(
                     "Customer notification failed."
                 )
-
-            # -------------------------------------------------
-            # LOGIN CUSTOMER
-            # -------------------------------------------------
 
             session.clear()
 
@@ -1871,7 +1847,7 @@ def clear_cart():
 
 
 # =========================================================
-# CHECKOUT
+# CHECKOUT - FIXED FOR POSTGRESQL
 # =========================================================
 
 @app.route(
@@ -1903,6 +1879,7 @@ def checkout():
     for pid, qty in cart_data.items():
 
         try:
+            pid_int = int(pid)
             qty_int = int(qty)
         except (
             ValueError,
@@ -1919,7 +1896,7 @@ def checkout():
             FROM products
             WHERE id=?
             """,
-            (pid,)
+            (pid_int,)
         )
 
         if (
@@ -2011,12 +1988,22 @@ def checkout():
 
             with get_connection() as conn:
 
+                # =================================================
+                # IMPORTANT:
+                # PostgreSQL does NOT support BEGIN IMMEDIATE.
+                # Use normal PostgreSQL transaction BEGIN.
+                # =================================================
+
                 conn.execute(
-                    "BEGIN IMMEDIATE"
+                    "BEGIN"
                 )
 
                 verified = []
                 final_total = 0.0
+
+                # -------------------------------------------------
+                # VERIFY STOCK INSIDE TRANSACTION
+                # -------------------------------------------------
 
                 for item, qty, _ in items:
 
@@ -2090,7 +2077,10 @@ def checkout():
                 )
 
                 # -------------------------------------------------
-                # GET ORDER ID WITHOUT lastrowid
+                # GET NEW ORDER ID
+                #
+                # We do NOT use lastrowid.
+                # The row is visible to this same transaction.
                 # -------------------------------------------------
 
                 order = conn.execute(
@@ -2099,7 +2089,8 @@ def checkout():
                         id
                     FROM orders
                     WHERE user_id=?
-                    ORDER BY id DESC
+                    ORDER BY created_at DESC,
+                             id DESC
                     LIMIT 1
                     """,
                     (g.user["id"],)
@@ -2108,13 +2099,13 @@ def checkout():
                 if not order:
 
                     raise RuntimeError(
-                        "Order was created but could not be loaded."
+                        "Order was created but its ID could not be loaded."
                     )
 
                 order_id = order["id"]
 
                 # -------------------------------------------------
-                # ORDER ITEMS + STOCK
+                # CREATE ORDER ITEMS + REDUCE STOCK
                 # -------------------------------------------------
 
                 for current, qty, _ in verified:
@@ -2159,8 +2150,18 @@ def checkout():
                         )
                     )
 
-                    # PostgreSQL/SQLite-compatible wrapper:
-                    # verify stock update using a fresh SELECT.
+                    # Check the affected row count.
+                    # If zero rows were updated, stock changed
+                    # between verification and update.
+                    if hasattr(updated, "rowcount"):
+
+                        if updated.rowcount != 1:
+
+                            raise ValueError(
+                                f'Insufficient stock for {current["name"]}.'
+                            )
+
+                    # Additional verification.
                     check_stock = conn.execute(
                         """
                         SELECT stock
@@ -2176,7 +2177,15 @@ def checkout():
                             f'Product {current["name"]} could not be updated.'
                         )
 
+                # -------------------------------------------------
+                # COMMIT
+                # -------------------------------------------------
+
                 conn.commit()
+
+            # -----------------------------------------------------
+            # CLEAR CART ONLY AFTER SUCCESSFUL COMMIT
+            # -----------------------------------------------------
 
             session["cart"] = {}
 
@@ -2407,10 +2416,6 @@ def setup():
                         "setup.html",
                         completed=True
                     )
-
-                # -------------------------------------------------
-                # CREATE ADMIN WITHOUT lastrowid
-                # -------------------------------------------------
 
                 conn.execute(
                     """
