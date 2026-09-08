@@ -1,2 +1,148 @@
-{% extends 'base.html' %}{% block title %}Categories — {{ store.store_name }}{% endblock %}
-{% block content %}<section class="page-hero"><div class="container"><span class="eyebrow">EXPLORE</span><h1>Shop by category</h1><p>Find products by the things you love.</p></div></section><section class="section"><div class="container"><div class="category-grid">{% for c in categories %}<a class="category-card large" href="{{ url_for('shop', category=c) }}"><span>{{ '%02d'|format(loop.index) }}</span><h2>{{ c }}</h2><p>{{ counts.get(c,0) }} products →</p></a>{% endfor %}</div></div></section>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Categories — {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">{{ 'ADMIN' if admin_mode else 'EXPLORE' }}</span>
+
+        <h1>
+            {{ 'Manage categories' if admin_mode else 'Shop by category' }}
+        </h1>
+
+        <p>
+            {% if admin_mode %}
+                Add, rename and manage the categories used by your store.
+            {% else %}
+                Find products by the things you love.
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        {% if admin_mode %}
+
+        <div class="admin-card">
+            <h2>Add category</h2>
+
+            <form method="post" action="{{ url_for('admin_categories') }}">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                <input
+                    type="text"
+                    name="name"
+                    maxlength="100"
+                    required
+                    placeholder="e.g. Smart Devices"
+                >
+
+                <button type="submit">
+                    Add category
+                </button>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Existing categories</h2>
+
+            {% if admin_categories %}
+
+                {% for c in admin_categories %}
+
+                <div class="category-admin-row">
+
+                    <form
+                        method="post"
+                        action="{{ url_for('edit_category', category_id=c.id) }}"
+                    >
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <input
+                            type="text"
+                            name="name"
+                            value="{{ c.name }}"
+                            maxlength="100"
+                            required
+                        >
+
+                        <span>
+                            {{ c.product_count }}
+                            product{{ '' if c.product_count == 1 else 's' }}
+                        </span>
+
+                        <button type="submit">
+                            Save
+                        </button>
+                    </form>
+
+                    <form
+                        method="post"
+                        action="{{ url_for('delete_category', category_id=c.id) }}"
+                        onsubmit="return confirm('Delete this category?');"
+                    >
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <button type="submit">
+                            Delete
+                        </button>
+                    </form>
+
+                </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p>No categories yet.</p>
+
+            {% endif %}
+        </div>
+
+        {% else %}
+
+        <div class="category-grid">
+
+            {% for c in categories %}
+
+            <a
+                class="category-card large"
+                href="{{ url_for('shop', category=c) }}"
+            >
+                <span>{{ '%02d'|format(loop.index) }}</span>
+
+                <h2>{{ c }}</h2>
+
+                <p>
+                    {{ counts.get(c, 0) }} products →
+                </p>
+            </a>
+
+            {% else %}
+
+            <p>No categories available yet.</p>
+
+            {% endfor %}
+
+        </div>
+
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}
