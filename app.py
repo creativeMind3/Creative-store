@@ -51,8 +51,8 @@ from database import (
 # =========================================================
 
 app = Flask(__name__)
-
 app.config.from_object(Config)
+
 
 # =========================================================
 # SESSION SECURITY
@@ -64,12 +64,9 @@ app.config["SECRET_KEY"] = os.environ.get(
 )
 
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
-
 app.config["SESSION_REFRESH_EACH_REQUEST"] = True
 
-is_render = (
-    os.environ.get("RENDER", "").lower() == "true"
-)
+is_render = os.environ.get("RENDER", "").lower() == "true"
 
 app.config["SESSION_COOKIE_SECURE"] = (
     os.environ.get(
@@ -86,7 +83,6 @@ csrf = CSRFProtect(app)
 
 init_db()
 
-
 STATUS_OPTIONS = [
     "Pending",
     "Processing",
@@ -95,9 +91,7 @@ STATUS_OPTIONS = [
     "Cancelled",
 ]
 
-HEX_RE = re.compile(
-    r"^#[0-9a-fA-F]{6}$"
-)
+HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 # =========================================================
@@ -105,16 +99,15 @@ HEX_RE = re.compile(
 # =========================================================
 
 def get_categories():
-    categories = getattr(
-        Config,
-        "CATEGORIES",
-        [],
+    rows = fetch_all(
+        """
+        SELECT name
+        FROM categories
+        ORDER BY LOWER(name) ASC, id ASC
+        """
     )
 
-    if not categories:
-        return []
-
-    return list(categories)
+    return [row["name"] for row in rows]
 
 
 # =========================================================
@@ -146,9 +139,7 @@ def send_telegram_message(message):
     }
 
     try:
-        data = json.dumps(
-            payload
-        ).encode("utf-8")
+        data = json.dumps(payload).encode("utf-8")
 
         req = Request(
             url,
@@ -159,10 +150,7 @@ def send_telegram_message(message):
             method="POST",
         )
 
-        with urlopen(
-            req,
-            timeout=10,
-        ) as response:
+        with urlopen(req, timeout=10) as response:
             return response.status == 200
 
     except (
@@ -177,11 +165,7 @@ def send_telegram_message(message):
         return False
 
 
-def notify_new_customer(
-    name,
-    email,
-    created_at,
-):
+def notify_new_customer(name, email, created_at):
     store = get_store()
 
     store_name = store.get(
@@ -210,11 +194,7 @@ def get_store():
 
 
 def whatsapp_number(raw):
-    return re.sub(
-        r"\D",
-        "",
-        raw or "",
-    )
+    return re.sub(r"\D", "", raw or "")
 
 
 def wa_link(message):
@@ -231,10 +211,7 @@ def wa_link(message):
     )
 
 
-def build_order_whatsapp(
-    order,
-    prefix="Hello",
-):
+def build_order_whatsapp(order, prefix="Hello"):
     store = get_store()
 
     template = store.get(
@@ -271,10 +248,7 @@ def build_order_whatsapp(
 
 @app.context_processor
 def inject_globals():
-    cart = session.get(
-        "cart",
-        {},
-    )
+    cart = session.get("cart", {})
 
     cart_count = 0
 
@@ -352,24 +326,13 @@ def load_user():
 
 @app.after_request
 def security_headers(response):
-    response.headers[
-        "X-Content-Type-Options"
-    ] = "nosniff"
-
-    response.headers[
-        "X-Frame-Options"
-    ] = "SAMEORIGIN"
-
-    response.headers[
-        "Referrer-Policy"
-    ] = "strict-origin-when-cross-origin"
-
-    response.headers[
-        "Permissions-Policy"
-    ] = (
-        "camera=(), "
-        "microphone=(), "
-        "geolocation=()"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = (
+        "strict-origin-when-cross-origin"
+    )
+    response.headers["Permissions-Policy"] = (
+        "camera=(), microphone=(), geolocation=()"
     )
 
     return response
@@ -431,19 +394,14 @@ def admin_required(view):
 def valid_email(email):
     return (
         "@" in email
-        and "." in email.rsplit(
-            "@",
-            1,
-        )[-1]
+        and "." in email.rsplit("@", 1)[-1]
     )
 
 
 def parse_price(raw):
     try:
         value = Decimal(
-            str(raw)
-            .replace(",", "")
-            .strip()
+            str(raw).replace(",", "").strip()
         )
 
         if value < 0:
@@ -456,9 +414,7 @@ def parse_price(raw):
         ValueError,
         TypeError,
     ):
-        raise ValueError(
-            "Invalid price."
-        )
+        raise ValueError("Invalid price.")
 
 
 def parse_stock(raw):
@@ -504,9 +460,7 @@ def save_upload(file):
             "Only JPG, JPEG, PNG and WEBP images are allowed."
         )
 
-    safe_name = secure_filename(
-        file.filename
-    )
+    safe_name = secure_filename(file.filename)
 
     if (
         not safe_name
@@ -521,9 +475,7 @@ def save_upload(file):
         1,
     )[-1].lower()
 
-    filename = (
-        f"{uuid.uuid4().hex}.{ext}"
-    )
+    filename = f"{uuid.uuid4().hex}.{ext}"
 
     upload_folder = Path(
         app.config["UPLOAD_FOLDER"]
@@ -546,9 +498,7 @@ def delete_upload(filename):
         return
 
     path = (
-        Path(
-            app.config["UPLOAD_FOLDER"]
-        )
+        Path(app.config["UPLOAD_FOLDER"])
         / Path(filename).name
     )
 
@@ -637,28 +587,17 @@ def product_query():
         ]
 
     if category in get_categories():
-        clauses.append(
-            "category = ?"
-        )
-
+        clauses.append("category = ?")
         params.append(category)
 
     try:
         if min_price:
-            clauses.append(
-                "price >= ?"
-            )
-            params.append(
-                float(min_price)
-            )
+            clauses.append("price >= ?")
+            params.append(float(min_price))
 
         if max_price:
-            clauses.append(
-                "price <= ?"
-            )
-            params.append(
-                float(max_price)
-            )
+            clauses.append("price <= ?")
+            params.append(float(max_price))
 
     except ValueError:
         pass
@@ -672,8 +611,7 @@ def product_query():
     }
 
     where = (
-        " WHERE "
-        + " AND ".join(clauses)
+        " WHERE " + " AND ".join(clauses)
         if clauses
         else ""
     )
@@ -683,10 +621,9 @@ def product_query():
         SELECT *
         FROM products
         {where}
-        ORDER BY
-        {order_map.get(
+        ORDER BY {order_map.get(
             sort,
-            "created_at DESC"
+            "created_at DESC",
         )}
         """,
         params,
@@ -760,6 +697,7 @@ def categories():
     return render_template(
         "categories.html",
         counts=counts,
+        admin_mode=False,
     )
 
 
@@ -782,7 +720,7 @@ def product(product_id):
         SELECT *
         FROM products
         WHERE category=?
-        AND id != ?
+          AND id != ?
         ORDER BY created_at DESC
         LIMIT 4
         """,
@@ -805,9 +743,7 @@ def product(product_id):
 
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-    safe_filename = Path(
-        filename
-    ).name
+    safe_filename = Path(filename).name
 
     if not safe_filename:
         abort(404)
@@ -816,9 +752,7 @@ def uploaded_file(filename):
         app.config["UPLOAD_FOLDER"]
     )
 
-    file_path = (
-        upload_folder / safe_filename
-    )
+    file_path = upload_folder / safe_filename
 
     if not file_path.is_file():
         app.logger.warning(
@@ -1081,9 +1015,7 @@ def login():
 
             return redirect(
                 safe_next_url(
-                    request.form.get(
-                        "next"
-                    )
+                    request.form.get("next")
                     or next_url
                 )
             )
@@ -1105,9 +1037,7 @@ def admin_login():
         and g.user["is_admin"]
     ):
         return redirect(
-            url_for(
-                "admin_dashboard"
-            )
+            url_for("admin_dashboard")
         )
 
     return redirect(
@@ -1139,7 +1069,7 @@ def admin_login_as_customer(user_id):
             is_admin
         FROM users
         WHERE id=?
-        AND is_admin=0
+          AND is_admin=0
         """,
         (user_id,),
     )
@@ -1151,9 +1081,7 @@ def admin_login_as_customer(user_id):
         )
 
         return redirect(
-            url_for(
-                "admin_customers"
-            )
+            url_for("admin_customers")
         )
 
     admin_id = g.user["id"]
@@ -1193,7 +1121,7 @@ def return_from_customer():
             is_admin
         FROM users
         WHERE id=?
-        AND is_admin=1
+          AND is_admin=1
         """,
         (admin_id,),
     )
@@ -1343,9 +1271,7 @@ def orders():
     )
 
 
-@app.route(
-    "/orders/<int:order_id>"
-)
+@app.route("/orders/<int:order_id>")
 @login_required
 def order_details(order_id):
     order = fetch_one(
@@ -1353,7 +1279,7 @@ def order_details(order_id):
         SELECT *
         FROM orders
         WHERE id=?
-        AND user_id=?
+          AND user_id=?
         """,
         (
             order_id,
@@ -1852,20 +1778,16 @@ def checkout():
 
         try:
             with get_connection() as conn:
-
-                # IMPORTANT:
                 # PostgreSQL supports BEGIN.
-                # PostgreSQL DOES NOT support:
-                # BEGIN IMMEDIATE
-
+                # PostgreSQL does NOT support BEGIN IMMEDIATE.
                 conn.execute("BEGIN")
 
                 verified = []
                 final_total = 0.0
 
-                # ---------------------------------------------
+                # -----------------------------------------
                 # VERIFY STOCK
-                # ---------------------------------------------
+                # -----------------------------------------
 
                 for item, qty, _ in items:
                     current = conn.execute(
@@ -1899,9 +1821,9 @@ def checkout():
                         )
                     )
 
-                # ---------------------------------------------
+                # -----------------------------------------
                 # CREATE ORDER
-                # ---------------------------------------------
+                # -----------------------------------------
 
                 conn.execute(
                     """
@@ -1935,9 +1857,9 @@ def checkout():
                     ),
                 )
 
-                # ---------------------------------------------
+                # -----------------------------------------
                 # GET ORDER ID
-                # ---------------------------------------------
+                # -----------------------------------------
 
                 order = conn.execute(
                     """
@@ -1958,9 +1880,9 @@ def checkout():
 
                 order_id = order["id"]
 
-                # ---------------------------------------------
+                # -----------------------------------------
                 # ORDER ITEMS + STOCK
-                # ---------------------------------------------
+                # -----------------------------------------
 
                 for current, qty, _ in verified:
                     conn.execute(
@@ -1994,7 +1916,7 @@ def checkout():
                         UPDATE products
                         SET stock=stock-?
                         WHERE id=?
-                        AND stock>=?
+                          AND stock>=?
                         """,
                         (
                             qty,
@@ -2003,18 +1925,20 @@ def checkout():
                         ),
                     )
 
-                    if hasattr(
-                        updated,
-                        "rowcount",
+                    if (
+                        hasattr(
+                            updated,
+                            "rowcount",
+                        )
+                        and updated.rowcount != 1
                     ):
-                        if updated.rowcount != 1:
-                            raise ValueError(
-                                f'Insufficient stock for {current["name"]}.'
-                            )
+                        raise ValueError(
+                            f'Insufficient stock for {current["name"]}.'
+                        )
 
-                # ---------------------------------------------
+                # -----------------------------------------
                 # COMMIT
-                # ---------------------------------------------
+                # -----------------------------------------
 
                 conn.commit()
 
@@ -2082,7 +2006,7 @@ def order_confirmation(order_id):
         SELECT *
         FROM orders
         WHERE id=?
-        AND user_id=?
+          AND user_id=?
         """,
         (
             order_id,
@@ -2227,7 +2151,6 @@ def setup():
 
         try:
             with get_connection() as conn:
-
                 if conn.execute(
                     """
                     SELECT id
@@ -2270,7 +2193,7 @@ def setup():
                     SELECT id
                     FROM users
                     WHERE email=?
-                    AND is_admin=1
+                      AND is_admin=1
                     """,
                     (email,),
                 ).fetchone()
@@ -2480,6 +2403,285 @@ def admin_dashboard():
 
 
 # =========================================================
+# ADMIN CATEGORIES
+# =========================================================
+
+@app.route(
+    "/admin/categories",
+    methods=["GET", "POST"],
+)
+@admin_required
+def admin_categories():
+    if request.method == "POST":
+        name = request.form.get(
+            "name",
+            "",
+        ).strip()[:100]
+
+        if len(name) < 2:
+            flash(
+                "Category name must be at least 2 characters.",
+                "danger",
+            )
+            return redirect(
+                url_for("admin_categories")
+            )
+
+        try:
+            with get_connection() as conn:
+                exists = conn.execute(
+                    """
+                    SELECT id
+                    FROM categories
+                    WHERE LOWER(name)=LOWER(?)
+                    """,
+                    (name,),
+                ).fetchone()
+
+                if exists:
+                    raise ValueError(
+                        "That category already exists."
+                    )
+
+                conn.execute(
+                    """
+                    INSERT INTO categories(name)
+                    VALUES(?)
+                    """,
+                    (name,),
+                )
+
+                conn.commit()
+
+            flash(
+                "Category added successfully.",
+                "success",
+            )
+
+        except ValueError as exc:
+            flash(
+                str(exc),
+                "danger",
+            )
+
+        except Exception:
+            app.logger.exception(
+                "Category creation failed."
+            )
+
+            flash(
+                "Could not add the category right now.",
+                "danger",
+            )
+
+        return redirect(
+            url_for("admin_categories")
+        )
+
+    rows = fetch_all(
+        """
+        SELECT
+            c.id,
+            c.name,
+            c.created_at,
+            COUNT(p.id) AS product_count
+        FROM categories c
+        LEFT JOIN products p
+            ON p.category = c.name
+        GROUP BY c.id
+        ORDER BY LOWER(c.name), c.id
+        """
+    )
+
+    return render_template(
+        "categories.html",
+        counts={},
+        admin_mode=True,
+        admin_categories=rows,
+    )
+
+
+@app.post(
+    "/admin/categories/<int:category_id>/edit"
+)
+@admin_required
+def edit_category(category_id):
+    category = fetch_one(
+        """
+        SELECT
+            id,
+            name
+        FROM categories
+        WHERE id=?
+        """,
+        (category_id,),
+    )
+
+    if not category:
+        abort(404)
+
+    name = request.form.get(
+        "name",
+        "",
+    ).strip()[:100]
+
+    if len(name) < 2:
+        flash(
+            "Category name must be at least 2 characters.",
+            "danger",
+        )
+        return redirect(
+            url_for("admin_categories")
+        )
+
+    try:
+        with get_connection() as conn:
+            duplicate = conn.execute(
+                """
+                SELECT id
+                FROM categories
+                WHERE LOWER(name)=LOWER(?)
+                  AND id != ?
+                """,
+                (
+                    name,
+                    category_id,
+                ),
+            ).fetchone()
+
+            if duplicate:
+                raise ValueError(
+                    "That category already exists."
+                )
+
+            old_name = category["name"]
+
+            conn.execute(
+                """
+                UPDATE categories
+                SET name=?
+                WHERE id=?
+                """,
+                (
+                    name,
+                    category_id,
+                ),
+            )
+
+            # Rename the category on every product using it.
+            conn.execute(
+                """
+                UPDATE products
+                SET category=?
+                WHERE category=?
+                """,
+                (
+                    name,
+                    old_name,
+                ),
+            )
+
+            conn.commit()
+
+        flash(
+            "Category renamed successfully.",
+            "success",
+        )
+
+    except ValueError as exc:
+        flash(
+            str(exc),
+            "danger",
+        )
+
+    except Exception:
+        app.logger.exception(
+            "Category rename failed."
+        )
+
+        flash(
+            "Could not rename the category right now.",
+            "danger",
+        )
+
+    return redirect(
+        url_for("admin_categories")
+    )
+
+
+@app.post(
+    "/admin/categories/<int:category_id>/delete"
+)
+@admin_required
+def delete_category(category_id):
+    category = fetch_one(
+        """
+        SELECT
+            id,
+            name
+        FROM categories
+        WHERE id=?
+        """,
+        (category_id,),
+    )
+
+    if not category:
+        abort(404)
+
+    product_count = fetch_one(
+        """
+        SELECT COUNT(*) AS c
+        FROM products
+        WHERE category=?
+        """,
+        (category["name"],),
+    )["c"]
+
+    if product_count:
+        flash(
+            f'Cannot delete "{category["name"]}" because it has '
+            f'{product_count} product(s). Move those products to '
+            "another category first.",
+            "warning",
+        )
+
+        return redirect(
+            url_for("admin_categories")
+        )
+
+    try:
+        with get_connection() as conn:
+            conn.execute(
+                """
+                DELETE FROM categories
+                WHERE id=?
+                """,
+                (category_id,),
+            )
+
+            conn.commit()
+
+        flash(
+            "Category deleted.",
+            "success",
+        )
+
+    except Exception:
+        app.logger.exception(
+            "Category deletion failed."
+        )
+
+        flash(
+            "Could not delete the category right now.",
+            "danger",
+        )
+
+    return redirect(
+        url_for("admin_categories")
+    )
+
+
+# =========================================================
 # ADMIN PRODUCTS
 # =========================================================
 
@@ -2510,9 +2712,7 @@ def upload_product_image():
             "image"
         )
 
-        filename = save_upload(
-            uploaded
-        )
+        filename = save_upload(uploaded)
 
         if not filename:
             return {
@@ -2748,11 +2948,8 @@ def edit_product(product_id):
                     != uploaded_image
                     or not (
                         Path(
-                            app.config[
-                                "UPLOAD_FOLDER"
-                            ]
-                        )
-                        / uploaded_image
+                            app.config["UPLOAD_FOLDER"]
+                        ) / uploaded_image
                     ).is_file()
                 ):
                     raise ValueError(
@@ -3301,11 +3498,8 @@ def admin_settings():
                     != uploaded_logo
                     or not (
                         Path(
-                            app.config[
-                                "UPLOAD_FOLDER"
-                            ]
-                        )
-                        / uploaded_logo
+                            app.config["UPLOAD_FOLDER"]
+                        ) / uploaded_logo
                     ).is_file()
                 ):
                     raise ValueError(
@@ -3511,9 +3705,7 @@ def not_found(error):
     ), 404
 
 
-@app.errorhandler(
-    RequestEntityTooLarge
-)
+@app.errorhandler(RequestEntityTooLarge)
 def too_large(error):
     return render_template(
         "error_file_too_large.html"
