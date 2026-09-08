@@ -1,4 +1,5 @@
 import os
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -24,6 +25,17 @@ DEFAULT_SETTINGS = {
     "nav_about": "1",
     "nav_contact": "1",
 }
+
+DEFAULT_CATEGORIES = [
+    "Phone Accessories",
+    "Watches",
+    "Bags",
+    "Jewelry",
+    "Audio",
+    "Electronics",
+    "Lifestyle",
+    "Other",
+]
 
 
 SCHEMA = """
@@ -84,13 +96,22 @@ CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS categories_name_lower_unique
+ON categories (LOWER(name));
 """
 
 
 class CompatConnection:
     """
-    Small compatibility layer so the existing app.py
-    can continue using SQLite-style ? placeholders.
+    Small compatibility layer so app.py can continue
+    using SQLite-style ? placeholders with PostgreSQL.
     """
 
     def __init__(self, connection):
@@ -98,13 +119,8 @@ class CompatConnection:
 
     def execute(self, query, params=()):
         query = query.replace("?", "%s")
-
-        cursor = self.connection.cursor(
-            cursor_factory=RealDictCursor
-        )
-
+        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute(query, params)
-
         return CompatCursor(cursor, self.connection)
 
     def commit(self):
@@ -124,7 +140,6 @@ class CompatConnection:
             self.connection.rollback()
         else:
             self.connection.commit()
-
         self.connection.close()
 
 
@@ -140,8 +155,12 @@ class CompatCursor:
         return self.cursor.fetchall()
 
     @property
+    def rowcount(self):
+        return self.cursor.rowcount
+
+    @property
     def lastrowid(self):
-        return self.cursor.fetchone()["id"] if False else None
+        return None
 
 
 def get_database_url():
@@ -159,35 +178,57 @@ def get_database_url():
 def get_connection():
     connection = psycopg2.connect(
         get_database_url(),
-        sslmode="require"
+        sslmode="require",
     )
-
     return CompatConnection(connection)
 
 
 def init_db():
-
     connection = psycopg2.connect(
         get_database_url(),
-        sslmode="require"
+        sslmode="require",
     )
 
     try:
-        cursor = connection.cursor(
-            cursor_factory=RealDictCursor
-        )
+        cursor = connection.cursor(cursor_factory=RealDictCursor)
 
         cursor.execute(SCHEMA)
 
-        for key, value in DEFAULT_SETTINGS.items():
+        # Preserve any categories already used by existing products.
+        cursor.execute(
+            """
+            INSERT INTO categories(name)
+            SELECT DISTINCT TRIM(category)
+            FROM products
+            WHERE category IS NOT NULL
+              AND TRIM(category) <> ''
+            ON CONFLICT DO NOTHING
+            """
+        )
 
+        # Add the original/default categories if they are missing.
+        for category in DEFAULT_CATEGORIES:
+            category = str(category).strip()
+            if not category:
+                continue
+
+            cursor.execute(
+                """
+                INSERT INTO categories(name)
+                VALUES (%s)
+                ON CONFLICT DO NOTHING
+                """,
+                (category,),
+            )
+
+        for key, value in DEFAULT_SETTINGS.items():
             cursor.execute(
                 """
                 INSERT INTO settings(key, value)
                 VALUES (%s, %s)
                 ON CONFLICT (key) DO NOTHING
                 """,
-                (key, value)
+                (key, value),
             )
 
         cursor.execute(
@@ -195,9 +236,9 @@ def init_db():
             UPDATE settings
             SET value = %s
             WHERE key = 'announcement_text'
-            AND value LIKE 'Free delivery on orders over ₦50,000%%'
+              AND value LIKE 'Free delivery on orders over ₦50,000%%'
             """,
-            (DEFAULT_SETTINGS["announcement_text"],)
+            (DEFAULT_SETTINGS["announcement_text"],),
         )
 
         cursor.execute(
@@ -212,7 +253,6 @@ def init_db():
         admins = cursor.fetchall()
 
         if len(admins) > 1:
-
             keep_id = admins[0]["id"]
 
             cursor.execute(
@@ -220,9 +260,9 @@ def init_db():
                 UPDATE users
                 SET is_admin = 0
                 WHERE is_admin = 1
-                AND id != %s
+                  AND id != %s
                 """,
-                (keep_id,)
+                (keep_id,),
             )
 
         connection.commit()
@@ -232,63 +272,43 @@ def init_db():
 
 
 def fetch_one(query, params=()):
-
     query = query.replace("?", "%s")
 
     connection = psycopg2.connect(
         get_database_url(),
         sslmode="require",
-        cursor_factory=RealDictCursor
+        cursor_factory=RealDictCursor,
     )
 
     try:
-
         cursor = connection.cursor()
-
-        cursor.execute(
-            query,
-            params
-        )
-
+        cursor.execute(query, params)
         return cursor.fetchone()
-
     finally:
         connection.close()
 
 
 def fetch_all(query, params=()):
-
     query = query.replace("?", "%s")
 
     connection = psycopg2.connect(
         get_database_url(),
         sslmode="require",
-        cursor_factory=RealDictCursor
+        cursor_factory=RealDictCursor,
     )
 
     try:
-
         cursor = connection.cursor()
-
-        cursor.execute(
-            query,
-            params
-        )
-
+        cursor.execute(query, params)
         return cursor.fetchall()
-
     finally:
         connection.close()
 
 
 def get_settings():
-
-    rows = fetch_all(
-        "SELECT key, value FROM settings"
-    )
+    rows = fetch_all("SELECT key, value FROM settings")
 
     settings = DEFAULT_SETTINGS.copy()
-
     settings.update(
         {
             row["key"]: row["value"]
@@ -300,18 +320,15 @@ def get_settings():
 
 
 def update_settings(values):
-
     connection = psycopg2.connect(
         get_database_url(),
-        sslmode="require"
+        sslmode="require",
     )
 
     try:
-
         cursor = connection.cursor()
 
         for key, value in values.items():
-
             cursor.execute(
                 """
                 INSERT INTO settings(key, value)
@@ -319,7 +336,7 @@ def update_settings(values):
                 ON CONFLICT (key)
                 DO UPDATE SET value = EXCLUDED.value
                 """,
-                (key, value)
+                (key, value),
             )
 
         connection.commit()
