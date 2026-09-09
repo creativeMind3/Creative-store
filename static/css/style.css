@@ -247,3 +247,119 @@ body:has(.admin-app){background:#f4f5f9}.admin-app{display:flex;min-height:calc(
 /* Automatic store-name logo */
 .brand-mark,.admin-brand-mark,.showcase-logo{font-family:"Plus Jakarta Sans",sans-serif;text-transform:uppercase;user-select:none}
 .showcase-logo-image{width:45px;height:45px;border-radius:14px;object-fit:cover;display:grid;place-items:center}
+/* ===== ADMIN SIDEBAR FIX ===== */
+
+.admin-app {
+    display: flex !important;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.admin-sidebar {
+    display: flex !important;
+    flex-direction: column;
+    width: 260px;
+    min-width: 260px;
+    min-height: 100vh;
+    background: #0b1220;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.admin-sidebar-head {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.admin-nav-group {
+    display: flex !important;
+    flex-direction: column;
+    padding: 10px 14px;
+}
+
+.admin-nav-label {
+    display: block !important;
+    margin: 10px 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    opacity: .55;
+}
+
+.admin-link {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    margin: 3px 0;
+    color: #dbe4f0 !important;
+    text-decoration: none !important;
+    border-radius: 10px;
+}
+
+.admin-link:hover,
+.admin-link.active {
+    background: rgba(255,255,255,.10);
+    color: #fff !important;
+}
+
+.nav-icon {
+    width: 22px;
+    text-align: center;
+}
+
+.nav-badge {
+    margin-left: auto;
+}
+
+.admin-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-content {
+    padding: 24px;
+}
+
+.admin-nav-bottom {
+    margin-top: auto;
+}
+
+.admin-overlay {
+    display: none;
+}
+
+/* Mobile/tablet */
+@media (max-width: 900px) {
+    .admin-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        height: 100vh;
+        transition: left .25s ease;
+    }
+
+    .admin-sidebar.open {
+        left: 0;
+    }
+
+    .admin-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.5);
+        z-index: 999;
+    }
+
+    .admin-overlay.show {
+        display: block;
+    }
+
+    .admin-mobile-toggle {
+        display: inline-flex !important;
+    }
+}
