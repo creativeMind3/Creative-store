@@ -1,10 +1,168 @@
 {% extends 'base.html' %}
+
 {% block title %}Order #{{ order.id }} — {{ store.store_name }}{% endblock %}
+
 {% block content %}
-<section class="section"><div class="container">
-<div class="section-head"><div><span class="eyebrow">MY ORDER</span><h1>Order #{{ order.id }}</h1><p>Placed {{ order.created_at }}</p></div><span class="status {{ order.status|lower }}">{{ order.status }}</span></div>
-<div class="checkout-layout">
-<div class="order-detail-card"><h2><i class="fa-solid fa-bag-shopping"></i> Order items</h2>{% for i in items %}<div class="order-item-modern"><div class="order-item-thumb"><span>{{ i['product_name'][0] }}</span></div><div class="order-item-info"><strong>{{ i['product_name'] }}</strong><small>{{ store.currency }}{{ '{:,.0f}'.format(i['price']) }} × {{ i['quantity'] }}</small></div><div class="order-item-price">{{ store.currency }}{{ '{:,.0f}'.format(i['price'] * i['quantity']) }}</div></div>{% endfor %}<div class="total"><span>Order total</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(order.total) }}</strong></div></div>
-<aside class="summary"><div class="delivery-box"><h2><i class="fa-solid fa-truck-fast"></i> Delivery details</h2><div class="delivery-row"><i class="fa-solid fa-user"></i><div><strong>Customer</strong><span>{{ order.customer_name }}</span></div></div><div class="delivery-row"><i class="fa-solid fa-phone"></i><div><strong>Phone</strong><span>{{ order.phone }}</span></div></div><div class="delivery-row"><i class="fa-solid fa-location-dot"></i><div><strong>Address</strong><span>{{ order.address }}</span></div></div>{% if order.note %}<div class="delivery-row"><i class="fa-solid fa-note-sticky"></i><div><strong>Delivery note</strong><span>{{ order.note }}</span></div></div>{% endif %}</div>{% if store.show_whatsapp=='1' and order_whatsapp_url %}<div class="order-actions"><a class="btn whatsapp" href="{{ order_whatsapp_url }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Send order to WhatsApp</a><a class="btn ghost" href="{{ url_for('orders') }}"><i class="fa-solid fa-arrow-left"></i> My orders</a></div>{% endif %}</aside>
-</div></div></section>
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">ORDER</span>
+        <h1>Order #{{ order.id }}</h1>
+        <p>Review your order details and current delivery status.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div class="admin-card" style="margin-bottom: 20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                <div>
+                    <h2 style="margin-bottom:6px;">Order status</h2>
+                    <p style="margin:0;">Placed on {{ order.created_at }}</p>
+                </div>
+
+                {% if order.status == 'Pending' %}
+                    <span class="status-badge pending">Pending</span>
+                {% elif order.status == 'Processing' %}
+                    <span class="status-badge processing">Processing</span>
+                {% elif order.status == 'Shipped' %}
+                    <span class="status-badge shipped">Shipped</span>
+                {% elif order.status == 'Delivered' %}
+                    <span class="status-badge delivered">Delivered</span>
+                {% elif order.status == 'Cancelled' %}
+                    <span class="status-badge cancelled">Cancelled</span>
+                {% else %}
+                    <span class="status-badge">{{ order.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if order.status == 'Pending' %}
+        <div class="admin-card" style="margin-bottom:20px;border:1px solid rgba(220,53,69,.25);">
+            <h2>Cancel this order?</h2>
+            <p>
+                You can cancel this order while it is still Pending.
+                Once processing has started, cancellation is no longer available.
+            </p>
+
+            <form
+                method="post"
+                action="{{ url_for('cancel_order', order_id=order.id) }}"
+                onsubmit="return confirm('Are you sure you want to cancel this order?');"
+            >
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                <button
+                    type="submit"
+                    style="background:#dc3545;color:#fff;border:0;padding:12px 18px;border-radius:10px;cursor:pointer;font-weight:700;"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                    Cancel Order
+                </button>
+            </form>
+        </div>
+        {% elif order.status == 'Cancelled' %}
+        <div class="admin-card" style="margin-bottom:20px;border:1px solid rgba(220,53,69,.25);">
+            <h2>Order cancelled</h2>
+            <p style="margin-bottom:0;">
+                This order has been cancelled successfully and can no longer be processed.
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="admin-card" style="margin-bottom:20px;">
+            <h2>Items</h2>
+
+            {% if items %}
+                <div style="display:grid;gap:12px;margin-top:16px;">
+                    {% for item in items %}
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px;border:1px solid rgba(0,0,0,.08);border-radius:12px;">
+                        <div>
+                            <strong>{{ item.product_name }}</strong>
+                            <div style="margin-top:4px;opacity:.7;">
+                                {{ item.quantity }} × {{ store.currency }}{{ '%.2f'|format(item.price) }}
+                            </div>
+                        </div>
+
+                        <strong>
+                            {{ store.currency }}{{ '%.2f'|format(item.price * item.quantity) }}
+                        </strong>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No items found for this order.</p>
+            {% endif %}
+
+            <div style="display:flex;justify-content:space-between;gap:15px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(0,0,0,.08);font-size:1.1rem;">
+                <strong>Total</strong>
+                <strong>{{ store.currency }}{{ '%.2f'|format(order.total) }}</strong>
+            </div>
+        </div>
+
+        <div class="admin-card" style="margin-bottom:20px;">
+            <h2>Delivery information</h2>
+
+            <div style="display:grid;gap:12px;margin-top:16px;">
+                <div>
+                    <strong>Customer</strong>
+                    <p style="margin:4px 0 0;">{{ order.customer_name }}</p>
+                </div>
+
+                <div>
+                    <strong>Phone</strong>
+                    <p style="margin:4px 0 0;">{{ order.phone }}</p>
+                </div>
+
+                <div>
+                    <strong>Address</strong>
+                    <p style="margin:4px 0 0;white-space:pre-line;">{{ order.address }}</p>
+                </div>
+
+                {% if order.note %}
+                <div>
+                    <strong>Note</strong>
+                    <p style="margin:4px 0 0;white-space:pre-line;">{{ order.note }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="{{ url_for('orders') }}" class="btn">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back to My Orders
+            </a>
+
+            {% if order_whatsapp_url %}
+            <a href="{{ order_whatsapp_url }}" target="_blank" rel="noopener" class="btn">
+                <i class="fa-brands fa-whatsapp"></i>
+                Contact us on WhatsApp
+            </a>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+
+<style>
+.status-badge {
+    display:inline-flex;
+    align-items:center;
+    padding:7px 12px;
+    border-radius:999px;
+    font-size:.85rem;
+    font-weight:700;
+    background:#eee;
+}
+.status-badge.pending { background:#fff3cd; color:#856404; }
+.status-badge.processing { background:#cfe2ff; color:#084298; }
+.status-badge.shipped { background:#cff4fc; color:#055160; }
+.status-badge.delivered { background:#d1e7dd; color:#0f5132; }
+.status-badge.cancelled { background:#f8d7da; color:#842029; }
+</style>
 {% endblock %}
