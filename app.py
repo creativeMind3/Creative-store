@@ -22,7 +22,6 @@ from flask import (
     session,
     url_for,
     send_from_directory,
-    Response,
 )
 
 from flask_wtf import CSRFProtect
@@ -453,10 +452,6 @@ def allowed_file(filename):
 # =========================================================
 
 def save_upload(file):
-    """Save an uploaded image locally for immediate use and permanently
-    store the same bytes in PostgreSQL. Render's local filesystem is only
-    temporary, so PostgreSQL is the persistent copy.
-    """
     if not file or not file.filename:
         return None
 
@@ -467,84 +462,45 @@ def save_upload(file):
 
     safe_name = secure_filename(file.filename)
 
-    if not safe_name or "." not in safe_name:
-        raise ValueError("Invalid image filename.")
+    if (
+        not safe_name
+        or "." not in safe_name
+    ):
+        raise ValueError(
+            "Invalid image filename."
+        )
 
-    ext = safe_name.rsplit(".", 1)[-1].lower()
+    ext = safe_name.rsplit(
+        ".",
+        1,
+    )[-1].lower()
+
     filename = f"{uuid.uuid4().hex}.{ext}"
 
-    file.stream.seek(0)
-    data = file.stream.read()
+    upload_folder = Path(
+        app.config["UPLOAD_FOLDER"]
+    )
 
-    if not data:
-        raise ValueError("The selected image is empty.")
+    upload_folder.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    # Keep uploads reasonably small because they are stored in PostgreSQL.
-    max_bytes = 5 * 1024 * 1024
-    if len(data) > max_bytes:
-        raise ValueError("Image must be 5 MB or smaller.")
+    file.save(
+        upload_folder / filename
+    )
 
-    mime = (file.mimetype or "").lower().strip()
-    allowed_mimes = {
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-    }
-    if mime not in allowed_mimes:
-        mime = {
-            "jpg": "image/jpeg",
-            "jpeg": "image/jpeg",
-            "png": "image/png",
-            "webp": "image/webp",
-        }.get(ext, "application/octet-stream")
-
-    upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    upload_folder.mkdir(parents=True, exist_ok=True)
-
-    try:
-        (upload_folder / filename).write_bytes(data)
-
-        with get_connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO uploaded_files(filename, data, mime)
-                VALUES(?, ?, ?)
-                ON CONFLICT(filename) DO UPDATE
-                SET data=EXCLUDED.data, mime=EXCLUDED.mime
-                """,
-                (filename, data, mime),
-            )
-            conn.commit()
-
-        return filename
-
-    except Exception:
-        try:
-            path = upload_folder / filename
-            if path.exists():
-                path.unlink()
-        except OSError:
-            pass
-        raise
+    return filename
 
 
 def delete_upload(filename):
     if not filename:
         return
 
-    safe_filename = Path(filename).name
-
-    try:
-        with get_connection() as conn:
-            conn.execute(
-                "DELETE FROM uploaded_files WHERE filename=?",
-                (safe_filename,),
-            )
-            conn.commit()
-    except Exception:
-        app.logger.exception("Could not delete persistent upload: %s", safe_filename)
-
-    path = Path(app.config["UPLOAD_FOLDER"]) / safe_filename
+    path = (
+        Path(app.config["UPLOAD_FOLDER"])
+        / Path(filename).name
+    )
 
     try:
         if path.exists():
@@ -792,32 +748,23 @@ def uploaded_file(filename):
     if not safe_filename:
         abort(404)
 
-    # First serve the permanent PostgreSQL copy.
-    stored = fetch_one(
-        """
-        SELECT data, mime
-        FROM uploaded_files
-        WHERE filename=?
-        """,
-        (safe_filename,),
+    upload_folder = Path(
+        app.config["UPLOAD_FOLDER"]
     )
 
-    if stored and stored["data"]:
-        return Response(
-            bytes(stored["data"]),
-            mimetype=stored["mime"] or "application/octet-stream",
-            headers={"Cache-Control": "public, max-age=31536000, immutable"},
-        )
-
-    # Backward compatibility for older uploads that were not stored in DB.
-    upload_folder = Path(app.config["UPLOAD_FOLDER"])
     file_path = upload_folder / safe_filename
 
     if not file_path.is_file():
-        app.logger.warning("Image not found: %s", file_path)
+        app.logger.warning(
+            "Image not found: %s",
+            file_path,
+        )
         abort(404)
 
-    return send_from_directory(str(upload_folder), safe_filename)
+    return send_from_directory(
+        str(upload_folder),
+        safe_filename,
+    )
 
 
 # =========================================================
@@ -1321,6 +1268,107 @@ def orders():
             """,
             (g.user["id"],),
         ),
+    )
+
+
+@app.post("/orders/<int:order_id>/cancel")
+@login_required
+def cancel_order(order_id):
+    """Allow a customer to cancel only their own Pending order."""
+    try:
+        with get_connection() as conn:
+            # Change the status only if the order is still Pending.
+            # This also prevents the same order from being cancelled twice.
+            updated = conn.execute(
+                """
+                UPDATE orders
+                SET status='Cancelled'
+                WHERE id=?
+                  AND user_id=?
+                  AND status='Pending'
+                """,
+                (
+                    order_id,
+                    g.user["id"],
+                ),
+            )
+
+            if updated.rowcount != 1:
+                conn.rollback()
+
+                order = fetch_one(
+                    """
+                    SELECT status
+                    FROM orders
+                    WHERE id=?
+                      AND user_id=?
+                    """,
+                    (
+                        order_id,
+                        g.user["id"],
+                    ),
+                )
+
+                if not order:
+                    abort(404)
+
+                flash(
+                    "This order can no longer be cancelled.",
+                    "danger",
+                )
+
+                return redirect(
+                    url_for(
+                        "order_details",
+                        order_id=order_id,
+                    )
+                )
+
+            # Restore the stock that was reserved when the order was placed.
+            items = conn.execute(
+                """
+                SELECT product_id, quantity
+                FROM order_items
+                WHERE order_id=?
+                """,
+                (order_id,),
+            ).fetchall()
+
+            for item in items:
+                conn.execute(
+                    """
+                    UPDATE products
+                    SET stock=stock+?
+                    WHERE id=?
+                    """,
+                    (
+                        item["quantity"],
+                        item["product_id"],
+                    ),
+                )
+
+            conn.commit()
+
+        flash(
+            "Your order has been cancelled successfully.",
+            "success",
+        )
+
+    except Exception:
+        app.logger.exception(
+            "Customer order cancellation failed."
+        )
+
+        flash(
+            "We could not cancel your order right now. Please try again.",
+            "danger",
+        )
+
+    return redirect(
+        url_for(
+            "order_details",
+            order_id=order_id,
+        )
     )
 
 
