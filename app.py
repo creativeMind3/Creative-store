@@ -22,6 +22,7 @@ from flask import (
     session,
     url_for,
     send_from_directory,
+    Response,
 )
 
 from flask_wtf import CSRFProtect
@@ -452,6 +453,10 @@ def allowed_file(filename):
 # =========================================================
 
 def save_upload(file):
+    """Save an uploaded image locally for immediate use and permanently
+    store the same bytes in PostgreSQL. Render's local filesystem is only
+    temporary, so PostgreSQL is the persistent copy.
+    """
     if not file or not file.filename:
         return None
 
@@ -462,45 +467,84 @@ def save_upload(file):
 
     safe_name = secure_filename(file.filename)
 
-    if (
-        not safe_name
-        or "." not in safe_name
-    ):
-        raise ValueError(
-            "Invalid image filename."
-        )
+    if not safe_name or "." not in safe_name:
+        raise ValueError("Invalid image filename.")
 
-    ext = safe_name.rsplit(
-        ".",
-        1,
-    )[-1].lower()
-
+    ext = safe_name.rsplit(".", 1)[-1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
 
-    upload_folder = Path(
-        app.config["UPLOAD_FOLDER"]
-    )
+    file.stream.seek(0)
+    data = file.stream.read()
 
-    upload_folder.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    if not data:
+        raise ValueError("The selected image is empty.")
 
-    file.save(
-        upload_folder / filename
-    )
+    # Keep uploads reasonably small because they are stored in PostgreSQL.
+    max_bytes = 5 * 1024 * 1024
+    if len(data) > max_bytes:
+        raise ValueError("Image must be 5 MB or smaller.")
 
-    return filename
+    mime = (file.mimetype or "").lower().strip()
+    allowed_mimes = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    }
+    if mime not in allowed_mimes:
+        mime = {
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "webp": "image/webp",
+        }.get(ext, "application/octet-stream")
+
+    upload_folder = Path(app.config["UPLOAD_FOLDER"])
+    upload_folder.mkdir(parents=True, exist_ok=True)
+
+    try:
+        (upload_folder / filename).write_bytes(data)
+
+        with get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO uploaded_files(filename, data, mime)
+                VALUES(?, ?, ?)
+                ON CONFLICT(filename) DO UPDATE
+                SET data=EXCLUDED.data, mime=EXCLUDED.mime
+                """,
+                (filename, data, mime),
+            )
+            conn.commit()
+
+        return filename
+
+    except Exception:
+        try:
+            path = upload_folder / filename
+            if path.exists():
+                path.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def delete_upload(filename):
     if not filename:
         return
 
-    path = (
-        Path(app.config["UPLOAD_FOLDER"])
-        / Path(filename).name
-    )
+    safe_filename = Path(filename).name
+
+    try:
+        with get_connection() as conn:
+            conn.execute(
+                "DELETE FROM uploaded_files WHERE filename=?",
+                (safe_filename,),
+            )
+            conn.commit()
+    except Exception:
+        app.logger.exception("Could not delete persistent upload: %s", safe_filename)
+
+    path = Path(app.config["UPLOAD_FOLDER"]) / safe_filename
 
     try:
         if path.exists():
@@ -748,23 +792,32 @@ def uploaded_file(filename):
     if not safe_filename:
         abort(404)
 
-    upload_folder = Path(
-        app.config["UPLOAD_FOLDER"]
+    # First serve the permanent PostgreSQL copy.
+    stored = fetch_one(
+        """
+        SELECT data, mime
+        FROM uploaded_files
+        WHERE filename=?
+        """,
+        (safe_filename,),
     )
 
+    if stored and stored["data"]:
+        return Response(
+            bytes(stored["data"]),
+            mimetype=stored["mime"] or "application/octet-stream",
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
+    # Backward compatibility for older uploads that were not stored in DB.
+    upload_folder = Path(app.config["UPLOAD_FOLDER"])
     file_path = upload_folder / safe_filename
 
     if not file_path.is_file():
-        app.logger.warning(
-            "Image not found: %s",
-            file_path,
-        )
+        app.logger.warning("Image not found: %s", file_path)
         abort(404)
 
-    return send_from_directory(
-        str(upload_folder),
-        safe_filename,
-    )
+    return send_from_directory(str(upload_folder), safe_filename)
 
 
 # =========================================================
