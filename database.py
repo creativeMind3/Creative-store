@@ -59,13 +59,6 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS uploaded_files (
-    filename TEXT PRIMARY KEY,
-    data BYTEA NOT NULL,
-    mime TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
@@ -107,6 +100,15 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Product images are stored permanently in PostgreSQL because Render's
+-- local filesystem can be cleared when the service restarts/redeploys.
+CREATE TABLE IF NOT EXISTS uploaded_files (
+    filename TEXT PRIMARY KEY,
+    data BYTEA NOT NULL,
+    mime TEXT NOT NULL DEFAULT 'application/octet-stream',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -200,14 +202,6 @@ def init_db():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
 
         cursor.execute(SCHEMA)
-
-        # Migrate existing databases safely.
-        cursor.execute(
-            "ALTER TABLE products ADD COLUMN IF NOT EXISTS image_data BYTEA"
-        )
-        cursor.execute(
-            "ALTER TABLE products ADD COLUMN IF NOT EXISTS image_mime TEXT"
-        )
 
         # Preserve any categories already used by existing products.
         cursor.execute(
