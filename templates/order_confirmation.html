@@ -1,12 +1,63 @@
 {% extends 'base.html' %}
-{% block title %}Order Confirmed — {{ store.store_name }}{% endblock %}
+
+{% block title %}Order #{{ order.id }} — {{ store.store_name }}{% endblock %}
+
 {% block content %}
-<section class="success-page">
-<div class="success-icon"><i class="fa-solid fa-check"></i></div>
-<span class="eyebrow">ORDER CONFIRMED</span>
-<h1>Thank you for your order!</h1>
-<p>Your order <strong>#{{ order.id }}</strong> has been received successfully and is currently <strong>{{ order.status }}</strong>.</p>
-<div class="confirmation-card"><h3>Order total</h3><strong>{{ store.currency }}{{ '{:,.0f}'.format(order.total) }}</strong><small><i class="fa-solid fa-location-dot"></i> Delivery to: {{ order.address }}</small></div>
-<div class="confirm-actions"><a class="btn primary" href="{{ url_for('order_details', order_id=order.id) }}"><i class="fa-solid fa-receipt"></i> View order details</a>{% if store.show_whatsapp=='1' and order_whatsapp_url %}<a class="btn whatsapp" href="{{ order_whatsapp_url }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Send to WhatsApp</a>{% endif %}<a class="btn ghost" href="{{ url_for('shop') }}"><i class="fa-solid fa-bag-shopping"></i> Continue shopping</a></div>
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">ORDER CONFIRMED</span>
+        <h1>Order #{{ order.id }} received</h1>
+        <p>Your order has been placed successfully.</p>
+    </div>
 </section>
+
+<section class="section">
+    <div class="container">
+        <div class="admin-card" style="padding:24px;margin-bottom:20px;border:2px solid var(--primary, #6d4aff);">
+            <h2 style="margin-top:0;">Complete your bank transfer</h2>
+            <p>Transfer <strong>{{ store.currency }}{{ '%.2f'|format(order.total) }}</strong> to the account below. The store will verify the payment before processing your order.</p>
+
+            <div style="display:grid;gap:12px;margin:20px 0;">
+                <div><small style="opacity:.7;">Bank</small><div style="font-weight:800;">{{ bank_name }}</div></div>
+                <div><small style="opacity:.7;">Account name</small><div style="font-weight:800;">{{ bank_account_name }}</div></div>
+                <div><small style="opacity:.7;">Account number</small><div style="font-size:1.4rem;font-weight:900;letter-spacing:.06em;">{{ bank_account_number }}</div></div>
+                <div><small style="opacity:.7;">Payment method</small><div style="font-weight:800;">{{ payment_method }}</div></div>
+            </div>
+
+            <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ bank_account_number }}').then(()=>this.innerText='Account number copied')">Copy account number</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:20px;align-items:start;">
+            <div class="admin-card" style="padding:24px;">
+                <h2 style="margin-top:0;">Items</h2>
+                {% for item in items %}
+                <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(128,128,128,.18);">
+                    <span>{{ item.product_name }} × {{ item.quantity }}</span>
+                    <strong>{{ store.currency }}{{ '%.2f'|format(item.price * item.quantity) }}</strong>
+                </div>
+                {% endfor %}
+                <div style="display:flex;justify-content:space-between;padding-top:16px;font-size:1.1rem;">
+                    <strong>Total</strong>
+                    <strong>{{ store.currency }}{{ '%.2f'|format(order.total) }}</strong>
+                </div>
+            </div>
+
+            <div class="admin-card" style="padding:24px;">
+                <h2 style="margin-top:0;">Order status</h2>
+                <p><strong>{{ order.status }}</strong></p>
+                <p style="opacity:.75;">Payment verification is handled by the store before the order is processed.</p>
+                {% if order_whatsapp_url %}
+                <a href="{{ order_whatsapp_url }}" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 16px;border-radius:10px;background:#25D366;color:white;text-decoration:none;font-weight:800;margin-top:16px;">Contact us on WhatsApp</a>
+                {% endif %}
+                <a href="{{ url_for('orders') }}" style="display:block;text-align:center;margin-top:12px;">View my orders</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+@media (max-width: 760px){
+    .container > div[style*="grid-template-columns"]{grid-template-columns:1fr !important;}
+}
+</style>
 {% endblock %}
