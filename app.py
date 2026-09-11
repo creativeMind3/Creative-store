@@ -94,6 +94,15 @@ STATUS_OPTIONS = [
 
 HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
+# =========================================================
+# BANK TRANSFER PAYMENT
+# =========================================================
+
+PAYMENT_METHOD = "Bank Transfer"
+BANK_NAME = "Zenith Bank"
+BANK_ACCOUNT_NAME = "Aishatu Abubakar"
+BANK_ACCOUNT_NUMBER = "2174324810"
+
 
 # =========================================================
 # CATEGORY HELPERS
@@ -1828,6 +1837,10 @@ def checkout():
                 "checkout.html",
                 items=items,
                 total=total,
+                payment_method=PAYMENT_METHOD,
+                bank_name=BANK_NAME,
+                bank_account_name=BANK_ACCOUNT_NAME,
+                bank_account_number=BANK_ACCOUNT_NUMBER,
             )
 
         try:
@@ -1888,9 +1901,11 @@ def checkout():
                         address,
                         note,
                         total,
-                        status
+                        status,
+                        payment_method
                     )
                     VALUES(
+                        ?,
                         ?,
                         ?,
                         ?,
@@ -1908,6 +1923,7 @@ def checkout():
                         note,
                         final_total,
                         "Pending",
+                        PAYMENT_METHOD,
                     ),
                 )
 
@@ -2043,6 +2059,10 @@ def checkout():
         "checkout.html",
         items=items,
         total=total,
+        payment_method=PAYMENT_METHOD,
+        bank_name=BANK_NAME,
+        bank_account_name=BANK_ACCOUNT_NAME,
+        bank_account_number=BANK_ACCOUNT_NUMBER,
     )
 
 
@@ -2084,6 +2104,10 @@ def order_confirmation(order_id):
         "order_confirmation.html",
         order=order,
         items=items,
+        payment_method=PAYMENT_METHOD,
+        bank_name=BANK_NAME,
+        bank_account_name=BANK_ACCOUNT_NAME,
+        bank_account_number=BANK_ACCOUNT_NUMBER,
         order_whatsapp_url=wa_link(
             build_order_whatsapp(
                 order,
