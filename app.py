@@ -22,6 +22,7 @@ from flask import (
     session,
     url_for,
     send_from_directory,
+    Response,
 )
 
 from flask_wtf import CSRFProtect
@@ -92,6 +93,15 @@ STATUS_OPTIONS = [
 ]
 
 HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+# =========================================================
+# BANK TRANSFER PAYMENT
+# =========================================================
+
+PAYMENT_METHOD = "Bank Transfer"
+BANK_NAME = "Zenith Bank"
+BANK_ACCOUNT_NAME = "Aishatu Abubakar"
+BANK_ACCOUNT_NUMBER = "2174324810"
 
 
 # =========================================================
@@ -452,6 +462,10 @@ def allowed_file(filename):
 # =========================================================
 
 def save_upload(file):
+    """Save an uploaded image locally for immediate use and permanently
+    store the same bytes in PostgreSQL. Render's local filesystem is only
+    temporary, so PostgreSQL is the persistent copy.
+    """
     if not file or not file.filename:
         return None
 
@@ -462,45 +476,84 @@ def save_upload(file):
 
     safe_name = secure_filename(file.filename)
 
-    if (
-        not safe_name
-        or "." not in safe_name
-    ):
-        raise ValueError(
-            "Invalid image filename."
-        )
+    if not safe_name or "." not in safe_name:
+        raise ValueError("Invalid image filename.")
 
-    ext = safe_name.rsplit(
-        ".",
-        1,
-    )[-1].lower()
-
+    ext = safe_name.rsplit(".", 1)[-1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
 
-    upload_folder = Path(
-        app.config["UPLOAD_FOLDER"]
-    )
+    file.stream.seek(0)
+    data = file.stream.read()
 
-    upload_folder.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    if not data:
+        raise ValueError("The selected image is empty.")
 
-    file.save(
-        upload_folder / filename
-    )
+    # Keep uploads reasonably small because they are stored in PostgreSQL.
+    max_bytes = 5 * 1024 * 1024
+    if len(data) > max_bytes:
+        raise ValueError("Image must be 5 MB or smaller.")
 
-    return filename
+    mime = (file.mimetype or "").lower().strip()
+    allowed_mimes = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    }
+    if mime not in allowed_mimes:
+        mime = {
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "webp": "image/webp",
+        }.get(ext, "application/octet-stream")
+
+    upload_folder = Path(app.config["UPLOAD_FOLDER"])
+    upload_folder.mkdir(parents=True, exist_ok=True)
+
+    try:
+        (upload_folder / filename).write_bytes(data)
+
+        with get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO uploaded_files(filename, data, mime)
+                VALUES(?, ?, ?)
+                ON CONFLICT(filename) DO UPDATE
+                SET data=EXCLUDED.data, mime=EXCLUDED.mime
+                """,
+                (filename, data, mime),
+            )
+            conn.commit()
+
+        return filename
+
+    except Exception:
+        try:
+            path = upload_folder / filename
+            if path.exists():
+                path.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def delete_upload(filename):
     if not filename:
         return
 
-    path = (
-        Path(app.config["UPLOAD_FOLDER"])
-        / Path(filename).name
-    )
+    safe_filename = Path(filename).name
+
+    try:
+        with get_connection() as conn:
+            conn.execute(
+                "DELETE FROM uploaded_files WHERE filename=?",
+                (safe_filename,),
+            )
+            conn.commit()
+    except Exception:
+        app.logger.exception("Could not delete persistent upload: %s", safe_filename)
+
+    path = Path(app.config["UPLOAD_FOLDER"]) / safe_filename
 
     try:
         if path.exists():
@@ -657,6 +710,7 @@ def index():
         FROM products p
         LEFT JOIN order_items oi
             ON oi.product_id = p.id
+        WHERE p.stock > 0
         GROUP BY p.id
         ORDER BY sold DESC,
                  p.created_at DESC
@@ -748,23 +802,32 @@ def uploaded_file(filename):
     if not safe_filename:
         abort(404)
 
-    upload_folder = Path(
-        app.config["UPLOAD_FOLDER"]
+    # First serve the permanent PostgreSQL copy.
+    stored = fetch_one(
+        """
+        SELECT data, mime
+        FROM uploaded_files
+        WHERE filename=?
+        """,
+        (safe_filename,),
     )
 
+    if stored and stored["data"]:
+        return Response(
+            bytes(stored["data"]),
+            mimetype=stored["mime"] or "application/octet-stream",
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
+    # Backward compatibility for older uploads that were not stored in DB.
+    upload_folder = Path(app.config["UPLOAD_FOLDER"])
     file_path = upload_folder / safe_filename
 
     if not file_path.is_file():
-        app.logger.warning(
-            "Image not found: %s",
-            file_path,
-        )
+        app.logger.warning("Image not found: %s", file_path)
         abort(404)
 
-    return send_from_directory(
-        str(upload_folder),
-        safe_filename,
-    )
+    return send_from_directory(str(upload_folder), safe_filename)
 
 
 # =========================================================
@@ -1277,8 +1340,6 @@ def cancel_order(order_id):
     """Allow a customer to cancel only their own Pending order."""
     try:
         with get_connection() as conn:
-            # Change the status only if the order is still Pending.
-            # This also prevents the same order from being cancelled twice.
             updated = conn.execute(
                 """
                 UPDATE orders
@@ -1287,44 +1348,24 @@ def cancel_order(order_id):
                   AND user_id=?
                   AND status='Pending'
                 """,
-                (
-                    order_id,
-                    g.user["id"],
-                ),
+                (order_id, g.user["id"]),
             )
 
             if updated.rowcount != 1:
                 conn.rollback()
-
                 order = fetch_one(
                     """
                     SELECT status
                     FROM orders
-                    WHERE id=?
-                      AND user_id=?
+                    WHERE id=? AND user_id=?
                     """,
-                    (
-                        order_id,
-                        g.user["id"],
-                    ),
+                    (order_id, g.user["id"]),
                 )
-
                 if not order:
                     abort(404)
+                flash("This order can no longer be cancelled.", "danger")
+                return redirect(url_for("order_details", order_id=order_id))
 
-                flash(
-                    "This order can no longer be cancelled.",
-                    "danger",
-                )
-
-                return redirect(
-                    url_for(
-                        "order_details",
-                        order_id=order_id,
-                    )
-                )
-
-            # Restore the stock that was reserved when the order was placed.
             items = conn.execute(
                 """
                 SELECT product_id, quantity
@@ -1341,35 +1382,17 @@ def cancel_order(order_id):
                     SET stock=stock+?
                     WHERE id=?
                     """,
-                    (
-                        item["quantity"],
-                        item["product_id"],
-                    ),
+                    (item["quantity"], item["product_id"]),
                 )
 
             conn.commit()
 
-        flash(
-            "Your order has been cancelled successfully.",
-            "success",
-        )
-
+        flash("Your order has been cancelled successfully.", "success")
     except Exception:
-        app.logger.exception(
-            "Customer order cancellation failed."
-        )
+        app.logger.exception("Customer order cancellation failed.")
+        flash("We could not cancel your order right now. Please try again.", "danger")
 
-        flash(
-            "We could not cancel your order right now. Please try again.",
-            "danger",
-        )
-
-    return redirect(
-        url_for(
-            "order_details",
-            order_id=order_id,
-        )
-    )
+    return redirect(url_for("order_details", order_id=order_id))
 
 
 @app.route("/orders/<int:order_id>")
@@ -1749,6 +1772,98 @@ def clear_cart():
 
 
 # =========================================================
+# COUPON HELPERS
+# =========================================================
+
+def normalize_coupon_code(code):
+    return (code or "").strip().upper()[:50]
+
+
+def get_valid_coupon(code, subtotal, connection=None):
+    code = normalize_coupon_code(code)
+    if not code:
+        return None, 0.0, ""
+
+    if connection is None:
+        coupon = fetch_one(
+            """
+            SELECT * FROM coupons
+            WHERE LOWER(code)=LOWER(?)
+              AND active=1
+            """,
+            (code,),
+        )
+    else:
+        coupon = connection.execute(
+            """
+            SELECT * FROM coupons
+            WHERE LOWER(code)=LOWER(?)
+              AND active=1
+            FOR UPDATE
+            """,
+            (code,),
+        ).fetchone()
+
+    if not coupon:
+        return None, 0.0, "Coupon code is invalid or inactive."
+
+    if coupon["expires_at"] is not None and coupon["expires_at"] <= datetime.now():
+        return None, 0.0, "This coupon has expired."
+
+    if coupon["max_uses"] is not None and coupon["used_count"] >= coupon["max_uses"]:
+        return None, 0.0, "This coupon has reached its usage limit."
+
+    if subtotal < float(coupon["min_order"]):
+        return None, 0.0, f'Minimum order for this coupon is ₦{float(coupon["min_order"]):,.0f}.'
+
+    value = float(coupon["discount_value"])
+    if coupon["discount_type"] == "percentage":
+        discount = subtotal * (value / 100.0)
+    else:
+        discount = value
+
+    discount = min(max(discount, 0.0), subtotal)
+    return coupon, discount, ""
+
+
+@app.post("/coupon/apply")
+@login_required
+def apply_coupon():
+    code = normalize_coupon_code(request.form.get("coupon_code"))
+    subtotal = 0.0
+
+    for pid, qty in session.get("cart", {}).items():
+        try:
+            pid_int = int(pid)
+            qty_int = int(qty)
+        except (ValueError, TypeError):
+            continue
+        item = fetch_one("SELECT price, stock FROM products WHERE id=?", (pid_int,))
+        if item and item["stock"] > 0 and qty_int > 0:
+            subtotal += float(item["price"]) * min(qty_int, int(item["stock"]))
+
+    coupon, discount, error = get_valid_coupon(code, subtotal)
+    if error:
+        session.pop("coupon_code", None)
+        flash(error, "danger")
+    else:
+        session["coupon_code"] = coupon["code"]
+        session.modified = True
+        flash(f'Coupon {coupon["code"]} applied. You saved ₦{discount:,.0f}.', "success")
+
+    return redirect(url_for("checkout"))
+
+
+@app.post("/coupon/remove")
+@login_required
+def remove_coupon():
+    session.pop("coupon_code", None)
+    session.modified = True
+    flash("Coupon removed.", "success")
+    return redirect(url_for("checkout"))
+
+
+# =========================================================
 # CHECKOUT
 # =========================================================
 
@@ -1830,6 +1945,7 @@ def checkout():
     if not items:
         session["cart"] = {}
         session.modified = True
+        session.pop("coupon_code", None)
 
         flash(
             "Your cart is empty.",
@@ -1839,6 +1955,14 @@ def checkout():
         return redirect(
             url_for("shop")
         )
+
+    coupon_code = session.get("coupon_code", "")
+    coupon, discount, coupon_error = get_valid_coupon(coupon_code, total)
+    if coupon_error:
+        session.pop("coupon_code", None)
+        coupon = None
+        discount = 0.0
+    final_total_preview = max(0.0, total - discount)
 
     if request.method == "POST":
         customer_name = request.form.get(
@@ -1875,6 +1999,13 @@ def checkout():
                 "checkout.html",
                 items=items,
                 total=total,
+                payment_method=PAYMENT_METHOD,
+                bank_name=BANK_NAME,
+                bank_account_name=BANK_ACCOUNT_NAME,
+                bank_account_number=BANK_ACCOUNT_NUMBER,
+                coupon=coupon,
+                discount=discount,
+                final_total=final_total_preview,
             )
 
         try:
@@ -1884,7 +2015,7 @@ def checkout():
                 conn.execute("BEGIN")
 
                 verified = []
-                final_total = 0.0
+                subtotal_verified = 0.0
 
                 # -----------------------------------------
                 # VERIFY STOCK
@@ -1912,7 +2043,7 @@ def checkout():
                         current["price"] * qty
                     )
 
-                    final_total += line
+                    subtotal_verified += line
 
                     verified.append(
                         (
@@ -1921,6 +2052,21 @@ def checkout():
                             line,
                         )
                     )
+
+                # -----------------------------------------
+                # APPLY COUPON INSIDE THE SAME TRANSACTION
+                # -----------------------------------------
+
+                coupon_code_tx = session.get("coupon_code", "")
+                coupon_tx, discount_tx, coupon_error_tx = get_valid_coupon(
+                    coupon_code_tx,
+                    subtotal_verified,
+                    conn,
+                )
+                if coupon_error_tx:
+                    raise ValueError(coupon_error_tx)
+
+                final_total = max(0.0, subtotal_verified - discount_tx)
 
                 # -----------------------------------------
                 # CREATE ORDER
@@ -1935,9 +2081,15 @@ def checkout():
                         address,
                         note,
                         total,
-                        status
+                        status,
+                        payment_method,
+                        coupon_code,
+                        discount
                     )
                     VALUES(
+                        ?,
+                        ?,
+                        ?,
                         ?,
                         ?,
                         ?,
@@ -1955,6 +2107,9 @@ def checkout():
                         note,
                         final_total,
                         "Pending",
+                        PAYMENT_METHOD,
+                        coupon_tx["code"] if coupon_tx else None,
+                        discount_tx,
                     ),
                 )
 
@@ -2037,6 +2192,20 @@ def checkout():
                             f'Insufficient stock for {current["name"]}.'
                         )
 
+                if coupon_tx:
+                    updated_coupon = conn.execute(
+                        """
+                        UPDATE coupons
+                        SET used_count=used_count+1
+                        WHERE id=?
+                          AND active=1
+                          AND (max_uses IS NULL OR used_count < max_uses)
+                        """,
+                        (coupon_tx["id"],),
+                    )
+                    if updated_coupon.rowcount != 1:
+                        raise ValueError("This coupon is no longer available.")
+
                 # -----------------------------------------
                 # COMMIT
                 # -----------------------------------------
@@ -2048,6 +2217,7 @@ def checkout():
             # ---------------------------------------------
 
             session["cart"] = {}
+            session.pop("coupon_code", None)
             session.modified = True
 
             flash(
@@ -2090,6 +2260,13 @@ def checkout():
         "checkout.html",
         items=items,
         total=total,
+        payment_method=PAYMENT_METHOD,
+        bank_name=BANK_NAME,
+        bank_account_name=BANK_ACCOUNT_NAME,
+        bank_account_number=BANK_ACCOUNT_NUMBER,
+        coupon=coupon,
+        discount=discount,
+        final_total=final_total_preview,
     )
 
 
@@ -2131,6 +2308,10 @@ def order_confirmation(order_id):
         "order_confirmation.html",
         order=order,
         items=items,
+        payment_method=PAYMENT_METHOD,
+        bank_name=BANK_NAME,
+        bank_account_name=BANK_ACCOUNT_NAME,
+        bank_account_number=BANK_ACCOUNT_NUMBER,
         order_whatsapp_url=wa_link(
             build_order_whatsapp(
                 order,
@@ -3183,6 +3364,85 @@ def delete_product(product_id):
     return redirect(
         url_for("admin_products")
     )
+
+
+# =========================================================
+# ADMIN COUPONS
+# =========================================================
+
+@app.route("/admin/coupons", methods=["GET", "POST"])
+@admin_required
+def admin_coupons():
+    if request.method == "POST":
+        code = normalize_coupon_code(request.form.get("code"))
+        discount_type = request.form.get("discount_type", "percentage")
+        try:
+            discount_value = float(request.form.get("discount_value", "0"))
+            min_order = float(request.form.get("min_order", "0"))
+            max_uses_raw = request.form.get("max_uses", "").strip()
+            max_uses = int(max_uses_raw) if max_uses_raw else None
+        except (ValueError, TypeError):
+            flash("Please enter valid coupon values.", "danger")
+            return redirect(url_for("admin_coupons"))
+
+        expires_raw = request.form.get("expires_at", "").strip()
+        expires_at = None
+        if expires_raw:
+            try:
+                expires_at = datetime.fromisoformat(expires_raw)
+            except ValueError:
+                flash("Invalid expiry date.", "danger")
+                return redirect(url_for("admin_coupons"))
+
+        if not code or discount_type not in ("percentage", "fixed") or discount_value <= 0 or min_order < 0:
+            flash("Please provide valid coupon details.", "danger")
+            return redirect(url_for("admin_coupons"))
+        if discount_type == "percentage" and discount_value > 100:
+            flash("Percentage discount cannot exceed 100%.", "danger")
+            return redirect(url_for("admin_coupons"))
+        if max_uses is not None and max_uses <= 0:
+            flash("Usage limit must be greater than 0.", "danger")
+            return redirect(url_for("admin_coupons"))
+
+        try:
+            with get_connection() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO coupons(code, discount_type, discount_value, min_order, max_uses, expires_at, active)
+                    VALUES(?,?,?,?,?,?,1)
+                    """,
+                    (code, discount_type, discount_value, min_order, max_uses, expires_at),
+                )
+                conn.commit()
+            flash(f"Coupon {code} created successfully.", "success")
+        except Exception:
+            app.logger.exception("Coupon creation failed.")
+            flash("That coupon code may already exist or could not be created.", "danger")
+
+        return redirect(url_for("admin_coupons"))
+
+    coupons = fetch_all("SELECT * FROM coupons ORDER BY created_at DESC, id DESC")
+    return render_template("admin_coupons.html", coupons=coupons)
+
+
+@app.post("/admin/coupons/<int:coupon_id>/toggle")
+@admin_required
+def toggle_coupon(coupon_id):
+    with get_connection() as conn:
+        conn.execute("UPDATE coupons SET active=CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=?", (coupon_id,))
+        conn.commit()
+    flash("Coupon status updated.", "success")
+    return redirect(url_for("admin_coupons"))
+
+
+@app.post("/admin/coupons/<int:coupon_id>/delete")
+@admin_required
+def delete_coupon(coupon_id):
+    with get_connection() as conn:
+        conn.execute("DELETE FROM coupons WHERE id=?", (coupon_id,))
+        conn.commit()
+    flash("Coupon deleted.", "success")
+    return redirect(url_for("admin_coupons"))
 
 
 # =========================================================
