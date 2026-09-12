@@ -113,8 +113,43 @@ CREATE TABLE IF NOT EXISTS uploaded_files (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS coupons (
+    id SERIAL PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+    discount_value DOUBLE PRECISION NOT NULL CHECK (discount_value > 0),
+    min_order DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (min_order >= 0),
+    max_uses INTEGER CHECK (max_uses IS NULL OR max_uses > 0),
+    used_count INTEGER NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+    expires_at TIMESTAMP NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    customer_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    address TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    total DOUBLE PRECISION NOT NULL CHECK (total >= 0),
+    status TEXT NOT NULL DEFAULT 'Pending',
+    payment_method TEXT NOT NULL DEFAULT 'Bank Transfer',
+    coupon_code TEXT,
+    discount DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (discount >= 0),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS categories_name_lower_unique
 ON categories (LOWER(name));
+
+CREATE UNIQUE INDEX IF NOT EXISTS coupons_code_lower_unique
+ON coupons (LOWER(code));
 """
 
 
@@ -210,6 +245,42 @@ def init_db():
             ALTER TABLE orders
             ADD COLUMN IF NOT EXISTS payment_method
             TEXT NOT NULL DEFAULT 'Bank Transfer'
+            """
+        )
+
+        # Add coupon/order discount fields safely to existing production databases.
+        cursor.execute(
+            """
+            ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS coupon_code TEXT
+            """
+        )
+        cursor.execute(
+            """
+            ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS discount DOUBLE PRECISION NOT NULL DEFAULT 0
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS coupons (
+                id SERIAL PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE,
+                discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+                discount_value DOUBLE PRECISION NOT NULL CHECK (discount_value > 0),
+                min_order DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (min_order >= 0),
+                max_uses INTEGER CHECK (max_uses IS NULL OR max_uses > 0),
+                used_count INTEGER NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+                expires_at TIMESTAMP NULL,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS coupons_code_lower_unique
+            ON coupons (LOWER(code))
             """
         )
 
