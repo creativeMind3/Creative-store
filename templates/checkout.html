@@ -112,12 +112,28 @@
       </div>
       <label>Delivery address<textarea name="address" required rows="4" placeholder="House number, street, area, city, state..."></textarea></label>
       <label>Additional note <span style="font-weight:500;color:#8a90a0">(optional)</span><textarea name="note" rows="3" placeholder="Any delivery instruction..."></textarea></label>
+
+      <div class="coupon-box" style="border:1px solid #e5e1ff;background:#faf9ff;border-radius:18px;padding:16px;margin:5px 0 22px">
+        <div style="font-weight:850;margin-bottom:9px"><i class="fa-solid fa-ticket"></i> Have a coupon?</div>
+        {% if coupon %}
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+            <span><strong>{{ coupon.code }}</strong> applied — you save {{ store.currency }}{{ '{:,.0f}'.format(discount) }}</span>
+            <button class="btn" type="submit" formaction="{{ url_for('remove_coupon') }}" formmethod="post" style="border:1px solid #ddd7ff;background:#fff;color:#5a3ed0;padding:9px 13px;border-radius:10px;font-weight:800">Remove</button>
+          </div>
+        {% else %}
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input name="coupon_code" placeholder="Enter coupon code" style="flex:1;min-width:180px;margin-top:0">
+            <button class="btn" type="submit" formaction="{{ url_for('apply_coupon') }}" formmethod="post" style="border:0;background:#6d4aff;color:#fff;padding:12px 16px;border-radius:11px;font-weight:800">Apply</button>
+          </div>
+        {% endif %}
+      </div>
+
       <div class="bank-box">
         <div class="bank-top"><div><div class="bank-title"><i class="fa-solid fa-building-columns"></i> {{ payment_method }}</div><small style="color:#777f90">Transfer the exact order total.</small></div><span class="bank-badge">PAYMENT DETAILS</span></div>
         <div class="bank-row"><span>Bank</span><strong>{{ bank_name }}</strong></div>
         <div class="bank-row"><span>Account name</span><strong>{{ bank_account_name }}</strong></div>
         <div class="bank-row"><span>Account number</span><div style="text-align:right"><strong id="accountNumber">{{ bank_account_number }}</strong><button class="copy-number" type="button" onclick="copyAccount()"><i class="fa-regular fa-copy"></i> Copy</button></div></div>
-        <div class="bank-row"><span>Amount</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(total) }}</strong></div>
+        <div class="bank-row"><span>Amount</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(final_total) }}</strong></div>
       </div>
       <button class="btn primary place-btn" type="submit"><i class="fa-solid fa-circle-check"></i> Place order</button>
       <p class="after-note"><i class="fa-solid fa-circle-info"></i><span>Your order will remain <strong>Pending</strong> until it is processed. After checkout, you can send the order details to WhatsApp for coordination.</span></p>
@@ -125,7 +141,11 @@
     <aside class="checkout-card summary-card">
       <span class="eyebrow"><i class="fa-solid fa-bag-shopping"></i> YOUR ORDER</span><h2 style="margin-top:8px">Order summary</h2>
       <div class="summary-items">{% for item,qty,line in items %}<div class="summary-item"><span>{{ item['name'] }} × {{ qty }}</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(line) }}</strong></div>{% endfor %}</div>
-      <div class="total-box"><span>Total to pay</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(total) }}</strong></div>
+      <div class="summary-item"><span>Subtotal</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(total) }}</strong></div>
+      {% if discount > 0 %}
+      <div class="summary-item"><span>Discount{% if coupon %} ({{ coupon.code }}){% endif %}</span><strong style="color:#16803c">−{{ store.currency }}{{ '{:,.0f}'.format(discount) }}</strong></div>
+      {% endif %}
+      <div class="total-box"><span>Total to pay</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(final_total) }}</strong></div>
       <p class="after-note"><i class="fa-solid fa-circle-check"></i><span>Stock is checked again before your order is saved.</span></p>
       {% if store.show_whatsapp=='1' and store.whatsapp %}<div class="after-note"><i class="fa-brands fa-whatsapp"></i><span>Need help? You can contact the store on WhatsApp after checkout.</span></div>{% endif %}
     </aside>
