@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS orders (
     note TEXT NOT NULL DEFAULT '',
     total DOUBLE PRECISION NOT NULL CHECK (total >= 0),
     status TEXT NOT NULL DEFAULT 'Pending',
+    payment_method TEXT NOT NULL DEFAULT 'Bank Transfer',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (user_id)
@@ -202,6 +203,15 @@ def init_db():
         cursor = connection.cursor(cursor_factory=RealDictCursor)
 
         cursor.execute(SCHEMA)
+
+        # Add payment_method safely to existing production databases.
+        cursor.execute(
+            """
+            ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS payment_method
+            TEXT NOT NULL DEFAULT 'Bank Transfer'
+            """
+        )
 
         # Preserve any categories already used by existing products.
         cursor.execute(
