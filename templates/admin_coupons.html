@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Coupons — {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">ADMIN</span>
+    <h1>Discount &amp; Coupons</h1>
+    <p>Create promotional codes and control how customers use them.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" style="display:grid;gap:20px">
+    <div class="admin-card">
+      <h2>Create coupon</h2>
+      <form method="post" style="display:grid;gap:12px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+          <label>Code<input name="code" maxlength="40" required placeholder="e.g. WELCOME10"></label>
+          <label>Discount type<select name="discount_type"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed amount (₦)</option></select></label>
+          <label>Discount value<input name="discount_value" type="number" min="0.01" step="0.01" required placeholder="10"></label>
+          <label>Minimum order<input name="min_order" type="number" min="0" step="0.01" value="0"></label>
+          <label>Usage limit<input name="max_uses" type="number" min="1" step="1" placeholder="Unlimited"></label>
+          <label>Expires at<input name="expires_at" type="datetime-local"></label>
+        </div>
+        <button type="submit">Create coupon</button>
+      </form>
+    </div>
+
+    <div class="admin-card">
+      <h2>Existing coupons</h2>
+      {% if coupons %}
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="text-align:left;padding:10px">Code</th><th style="text-align:left;padding:10px">Discount</th><th style="text-align:left;padding:10px">Min. order</th><th style="text-align:left;padding:10px">Usage</th><th style="text-align:left;padding:10px">Expiry</th><th style="text-align:left;padding:10px">Status</th><th style="text-align:left;padding:10px">Actions</th></tr></thead>
+          <tbody>
+          {% for c in coupons %}
+          <tr style="border-top:1px solid #eee">
+            <td style="padding:10px"><strong>{{ c.code }}</strong></td>
+            <td style="padding:10px">{% if c.discount_type == 'percentage' %}{{ c.discount_value|round(2) }}%{% else %}{{ store.currency }}{{ '{:,.0f}'.format(c.discount_value) }}{% endif %}</td>
+            <td style="padding:10px">{{ store.currency }}{{ '{:,.0f}'.format(c.min_order) }}</td>
+            <td style="padding:10px">{{ c.used_count }}{% if c.max_uses %} / {{ c.max_uses }}{% else %} / ∞{% endif %}</td>
+            <td style="padding:10px">{{ c.expires_at or 'No expiry' }}</td>
+            <td style="padding:10px">{{ 'Active' if c.active == 1 else 'Disabled' }}</td>
+            <td style="padding:10px;display:flex;gap:8px;flex-wrap:wrap">
+              <form method="post" action="{{ url_for('toggle_coupon', coupon_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">{{ 'Disable' if c.active == 1 else 'Enable' }}</button></form>
+              <form method="post" action="{{ url_for('delete_coupon', coupon_id=c.id) }}" onsubmit="return confirm('Delete this coupon?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Delete</button></form>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<p>No coupons created yet.</p>{% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
