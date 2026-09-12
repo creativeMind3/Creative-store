@@ -1,25 +1,77 @@
 {% extends 'base.html' %}
+
 {% block title %}Checkout — {{ store.store_name }}{% endblock %}
+
 {% block content %}
-<section class="page-hero"><div class="container"><span class="eyebrow">SECURE CHECKOUT</span><h1>Complete your order</h1><p>Enter accurate delivery information and review your order before placing it.</p></div></section>
-<section class="section"><div class="container checkout-layout">
-<form class="form-card" method="post">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<h2>Delivery details</h2>
-<div class="secure-note"><i class="fa-solid fa-shield-halved"></i><span>Your delivery information is used only to process and coordinate this order.</span></div>
-<div class="form-row"><label>Customer name<input name="customer_name" required value="{{ g.user['name'] }}"></label><label>Phone number<input name="phone" required placeholder="080..." inputmode="tel"></label></div>
-<label>Delivery address<textarea name="address" required rows="4" placeholder="House number, street, area, city, state..."></textarea></label>
-<label>Additional note <span class="muted-text">(optional)</span><textarea name="note" rows="3" placeholder="Any delivery instruction..."></textarea></label>
-<button class="btn primary wide" type="submit"><i class="fa-solid fa-lock"></i> Place order securely</button>
-</form>
-<aside class="summary">
-<h2>Order summary</h2>
-<div class="summary-rows">
-{% for item,qty,line in items %}<div><span>{{ item['name'] }} × {{ qty }}</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(line) }}</strong></div>{% endfor %}
-</div>
-<div class="summary-total"><span>Total to pay</span><strong>{{ store.currency }}{{ '{:,.0f}'.format(total) }}</strong></div>
-<p class="small-note"><i class="fa-solid fa-circle-check"></i> Stock is checked again before your order is saved.</p>
-{% if store.show_whatsapp=='1' and store.whatsapp %}<div class="whatsapp-hint"><i class="fa-brands fa-whatsapp"></i> After checkout, you can send your order details to our WhatsApp for delivery coordination.</div>{% endif %}
-</aside>
-</div></section>
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">CHECKOUT</span>
+        <h1>Complete your order</h1>
+        <p>Fill in your delivery details and pay by bank transfer.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.8fr);gap:24px;align-items:start;">
+            <div class="admin-card" style="padding:24px;">
+                <h2 style="margin-top:0;">Delivery details</h2>
+
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <label for="customer_name">Full name</label>
+                    <input id="customer_name" name="customer_name" type="text" required minlength="2" value="{{ request.form.get('customer_name', g.user.name if g.user else '') }}" placeholder="Your full name">
+
+                    <label for="phone">Phone number</label>
+                    <input id="phone" name="phone" type="tel" required value="{{ request.form.get('phone', '') }}" placeholder="08012345678">
+
+                    <label for="address">Delivery address</label>
+                    <textarea id="address" name="address" required minlength="5" rows="4" placeholder="Enter your delivery address">{{ request.form.get('address', '') }}</textarea>
+
+                    <label for="note">Order note <span style="font-weight:400;opacity:.7;">(optional)</span></label>
+                    <textarea id="note" name="note" rows="3" placeholder="Any special instruction?">{{ request.form.get('note', '') }}</textarea>
+
+                    <button type="submit" style="width:100%;margin-top:16px;">Place order</button>
+                </form>
+            </div>
+
+            <div style="display:grid;gap:16px;">
+                <div class="admin-card" style="padding:24px;border:2px solid var(--primary, #6d4aff);">
+                    <div style="font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.7;">{{ payment_method }}</div>
+                    <h2 style="margin:8px 0 16px;">Bank transfer</h2>
+                    <p style="margin-bottom:18px;">Transfer the exact order amount to the account below. Your order will remain <strong>Pending</strong> until the payment is verified.</p>
+
+                    <div style="display:grid;gap:12px;">
+                        <div><small style="opacity:.7;">Bank</small><div style="font-weight:800;">{{ bank_name }}</div></div>
+                        <div><small style="opacity:.7;">Account name</small><div style="font-weight:800;">{{ bank_account_name }}</div></div>
+                        <div><small style="opacity:.7;">Account number</small><div style="font-size:1.35rem;font-weight:900;letter-spacing:.06em;">{{ bank_account_number }}</div></div>
+                    </div>
+
+                    <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ bank_account_number }}').then(()=>this.innerText='Account number copied')" style="width:100%;margin-top:18px;">Copy account number</button>
+                </div>
+
+                <div class="admin-card" style="padding:24px;">
+                    <h2 style="margin-top:0;">Order summary</h2>
+                    {% for item, qty, line in items %}
+                    <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(128,128,128,.18);">
+                        <span>{{ item.name }} × {{ qty }}</span>
+                        <strong>{{ store.currency }}{{ '%.2f'|format(line) }}</strong>
+                    </div>
+                    {% endfor %}
+                    <div style="display:flex;justify-content:space-between;gap:12px;padding-top:16px;font-size:1.1rem;">
+                        <strong>Total</strong>
+                        <strong>{{ store.currency }}{{ '%.2f'|format(total) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+@media (max-width: 760px){
+    .container > div[style*="grid-template-columns"]{grid-template-columns:1fr !important;}
+}
+</style>
 {% endblock %}
