@@ -21,32 +21,39 @@
     <!-- =====================================================
          FONTS
     ====================================================== -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
           rel="stylesheet">
 
+
     <!-- =====================================================
          FONT AWESOME
     ====================================================== -->
+
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
 
     <!-- =====================================================
          MAIN WEBSITE CSS
     ====================================================== -->
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
+
 
     <!-- =====================================================
          ADMIN SIDEBAR CSS
     ====================================================== -->
-    <style>
 
-        /* =================================================
-           ADMIN VARIABLES
-        ================================================== */
+    <style>
 
         :root {
             --admin-sidebar: #11131a;
@@ -65,22 +72,12 @@
             --admin-topbar: #ffffff;
 
             --admin-width: 260px;
-
-            --admin-shadow:
-                0 10px 30px rgba(0,0,0,.08);
         }
 
 
         /* =================================================
-           RESET FOR ADMIN
+           ADMIN PAGE
         ================================================== */
-
-        .admin-layout *,
-        .admin-layout *::before,
-        .admin-layout *::after {
-            box-sizing: border-box;
-        }
-
 
         body.admin-page {
             margin: 0;
@@ -88,9 +85,11 @@
         }
 
 
-        /* =================================================
-           ADMIN LAYOUT
-        ================================================== */
+        .admin-layout,
+        .admin-layout * {
+            box-sizing: border-box;
+        }
+
 
         .admin-layout {
             min-height: 100vh;
@@ -118,7 +117,8 @@
                     #0d0f15 100%
                 );
 
-            border-right: 1px solid var(--admin-sidebar-border);
+            border-right:
+                1px solid var(--admin-sidebar-border);
 
             z-index: 5000;
 
@@ -131,14 +131,14 @@
             scrollbar-width: thin;
 
             transition:
-                transform .3s ease,
-                width .3s ease;
+                transform .3s ease;
         }
 
 
         .admin-sidebar::-webkit-scrollbar {
             width: 5px;
         }
+
 
         .admin-sidebar::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,.12);
@@ -157,13 +157,15 @@
 
             display: flex;
             align-items: center;
+
             gap: 12px;
 
             border-bottom:
                 1px solid var(--admin-sidebar-border);
 
             text-decoration: none;
-            color: white;
+
+            color: #ffffff;
         }
 
 
@@ -213,7 +215,9 @@
             font-weight: 800;
 
             white-space: nowrap;
+
             overflow: hidden;
+
             text-overflow: ellipsis;
         }
 
@@ -229,6 +233,7 @@
             font-weight: 700;
 
             letter-spacing: 1.2px;
+
             text-transform: uppercase;
         }
 
@@ -239,6 +244,7 @@
 
         .admin-sidebar-content {
             padding: 18px 13px 20px;
+
             flex: 1;
         }
 
@@ -246,8 +252,7 @@
         .admin-section-title {
             padding: 0 11px;
 
-            margin:
-                14px 0 8px;
+            margin: 14px 0 8px;
 
             color: #6f7280;
 
@@ -266,12 +271,14 @@
 
 
         /* =================================================
-           SIDEBAR LINKS
+           NAVIGATION
         ================================================== */
 
         .admin-nav {
             display: flex;
+
             flex-direction: column;
+
             gap: 4px;
         }
 
@@ -284,6 +291,7 @@
             padding: 0 12px;
 
             display: flex;
+
             align-items: center;
 
             gap: 12px;
@@ -299,6 +307,7 @@
                 sans-serif;
 
             font-size: 14px;
+
             font-weight: 600;
 
             transition:
@@ -317,7 +326,8 @@
 
             color: #858895;
 
-            transition: color .2s ease;
+            transition:
+                color .2s ease;
         }
 
 
@@ -327,7 +337,8 @@
             background:
                 var(--admin-hover);
 
-            transform: translateX(2px);
+            transform:
+                translateX(2px);
         }
 
 
@@ -362,14 +373,17 @@
             position: absolute;
 
             left: 0;
+
             top: 9px;
             bottom: 9px;
 
             width: 3px;
 
-            border-radius: 0 4px 4px 0;
+            border-radius:
+                0 4px 4px 0;
 
-            background: #ffffff;
+            background:
+                #ffffff;
         }
 
 
@@ -381,11 +395,13 @@
             margin-left: auto;
 
             min-width: 22px;
+
             height: 22px;
 
             padding: 0 6px;
 
             display: inline-flex;
+
             align-items: center;
             justify-content: center;
 
@@ -396,6 +412,7 @@
             color: white;
 
             font-size: 10px;
+
             font-weight: 800;
         }
 
@@ -412,37 +429,12 @@
         }
 
 
-        .admin-view-store {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-
-            padding: 11px 12px;
-
-            margin-bottom: 9px;
-
-            border-radius: 10px;
-
-            color: #aeb1bd;
-
-            text-decoration: none;
-
-            font-size: 13px;
-            font-weight: 600;
-
-            transition: .2s ease;
-        }
-
-
-        .admin-view-store:hover {
-            color: #ffffff;
-            background: var(--admin-hover);
-        }
-
-
+        .admin-view-store,
         .admin-logout {
             display: flex;
+
             align-items: center;
+
             gap: 10px;
 
             width: 100%;
@@ -451,14 +443,34 @@
 
             border-radius: 10px;
 
-            color: #ff8f8f;
-
             text-decoration: none;
 
             font-size: 13px;
+
             font-weight: 600;
 
-            transition: .2s ease;
+            transition:
+                .2s ease;
+        }
+
+
+        .admin-view-store {
+            margin-bottom: 9px;
+
+            color: #aeb1bd;
+        }
+
+
+        .admin-view-store:hover {
+            color: #ffffff;
+
+            background:
+                var(--admin-hover);
+        }
+
+
+        .admin-logout {
+            color: #ff8f8f;
         }
 
 
@@ -477,12 +489,11 @@
         .admin-main {
             min-height: 100vh;
 
-            margin-left: var(--admin-width);
+            margin-left:
+                var(--admin-width);
 
-            background: var(--admin-main-bg);
-
-            transition:
-                margin-left .3s ease;
+            background:
+                var(--admin-main-bg);
         }
 
 
@@ -502,7 +513,9 @@
             padding: 0 28px;
 
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             background:
@@ -518,7 +531,9 @@
 
         .admin-topbar-left {
             display: flex;
+
             align-items: center;
+
             gap: 14px;
 
             min-width: 0;
@@ -529,7 +544,8 @@
             width: 42px;
             height: 42px;
 
-            border: 1px solid #e4e5eb;
+            border:
+                1px solid #e4e5eb;
 
             border-radius: 10px;
 
@@ -540,6 +556,7 @@
             display: none;
 
             align-items: center;
+
             justify-content: center;
 
             cursor: pointer;
@@ -559,6 +576,7 @@
                 sans-serif;
 
             font-size: 16px;
+
             font-weight: 800;
 
             color: #171923;
@@ -573,13 +591,16 @@
             color: #9093a0;
 
             font-size: 12px;
+
             font-weight: 500;
         }
 
 
         .admin-topbar-right {
             display: flex;
+
             align-items: center;
+
             gap: 10px;
         }
 
@@ -589,7 +610,9 @@
             height: 40px;
 
             display: flex;
+
             align-items: center;
+
             justify-content: center;
 
             border-radius: 10px;
@@ -604,16 +627,20 @@
 
         .admin-top-icon:hover {
             background: #f0f0f5;
+
             color: #171923;
         }
 
 
         .admin-profile {
             display: flex;
+
             align-items: center;
+
             gap: 10px;
 
             padding-left: 10px;
+
             margin-left: 2px;
 
             border-left:
@@ -628,7 +655,9 @@
             border-radius: 50%;
 
             display: flex;
+
             align-items: center;
+
             justify-content: center;
 
             background:
@@ -641,6 +670,7 @@
             color: white;
 
             font-size: 14px;
+
             font-weight: 800;
         }
 
@@ -656,6 +686,7 @@
             color: #242632;
 
             font-size: 13px;
+
             font-weight: 800;
         }
 
@@ -668,6 +699,7 @@
             color: #9295a1;
 
             font-size: 10px;
+
             font-weight: 600;
         }
 
@@ -687,6 +719,7 @@
             z-index: 4500;
 
             opacity: 0;
+
             visibility: hidden;
 
             transition:
@@ -695,8 +728,15 @@
         }
 
 
+        .admin-sidebar-overlay.open {
+            opacity: 1;
+
+            visibility: visible;
+        }
+
+
         /* =================================================
-           ADMIN CONTENT WRAPPER
+           ADMIN CONTENT
         ================================================== */
 
         .admin-content {
@@ -704,27 +744,46 @@
         }
 
 
-        /* =================================================
-           NORMAL SITE HEADER
-        ================================================== */
-
-        .admin-page .site-header,
-        .admin-page .announcement-bar {
-            display: none;
-        }
-
-
-        /* =================================================
-           FLASH MESSAGES
-        ================================================== */
-
-        .admin-page main > .container {
+        .admin-content > .container {
             max-width: none;
         }
 
 
         /* =================================================
-           RESPONSIVE
+           ADMIN FLASH
+        ================================================== */
+
+        .admin-flashes {
+            margin-bottom: 20px;
+        }
+
+
+        /* =================================================
+           NORMAL WEBSITE
+        ================================================== */
+
+        .announcement-bar {
+            width: 100%;
+        }
+
+
+        /* =================================================
+           ACCESSIBILITY
+        ================================================== */
+
+        .admin-nav-link:focus-visible,
+        .admin-mobile-toggle:focus-visible,
+        .admin-view-store:focus-visible,
+        .admin-logout:focus-visible {
+            outline:
+                3px solid rgba(109,74,255,.35);
+
+            outline-offset: 2px;
+        }
+
+
+        /* =================================================
+           RESPONSIVE ADMIN
         ================================================== */
 
         @media (max-width: 1000px) {
@@ -748,12 +807,6 @@
 
             .admin-mobile-toggle {
                 display: flex;
-            }
-
-
-            .admin-sidebar-overlay.open {
-                opacity: 1;
-                visibility: visible;
             }
 
 
@@ -821,30 +874,19 @@
                 padding:
                     16px 12px 24px;
             }
-        }
 
-
-        /* =================================================
-           ACCESSIBILITY
-        ================================================== */
-
-        .admin-nav-link:focus-visible,
-        .admin-mobile-toggle:focus-visible,
-        .admin-view-store:focus-visible,
-        .admin-logout:focus-visible {
-            outline:
-                3px solid rgba(109,74,255,.35);
-
-            outline-offset: 2px;
         }
 
     </style>
 
+
     {% block head %}{% endblock %}
+
 </head>
 
 
 <body class="{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}admin-page{% endif %}">
+
 
 <!-- =====================================================
      IMPERSONATION BAR
@@ -865,7 +907,7 @@
 
     <i class="fa-solid fa-user-secret"></i>
 
-    You are viewing the store as a customer.
+    Customer Preview Mode
 
     <a href="{{ url_for('admin_dashboard') }}"
        style="
@@ -874,7 +916,9 @@
            font-weight:800;
            text-decoration:none;
        ">
+
         Return to Admin
+
     </a>
 
 </div>
@@ -882,8 +926,9 @@
 {% endif %}
 
 
+
 <!-- =====================================================
-     ADMIN PANEL
+     ADMIN SIDEBAR
 ====================================================== -->
 
 {% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
@@ -891,17 +936,15 @@
 <div class="admin-layout">
 
 
-    <!-- =================================================
-         SIDEBAR OVERLAY
-    ================================================== -->
+    <!-- MOBILE OVERLAY -->
 
     <div class="admin-sidebar-overlay"
-         id="adminSidebarOverlay"></div>
+         id="adminSidebarOverlay">
+    </div>
 
 
-    <!-- =================================================
-         SIDEBAR
-    ================================================== -->
+
+    <!-- SIDEBAR -->
 
     <aside class="admin-sidebar"
            id="adminSidebar">
@@ -918,6 +961,7 @@
 
             </div>
 
+
             <div class="admin-brand-text">
 
                 <span class="admin-brand-name">
@@ -931,6 +975,7 @@
             </div>
 
         </a>
+
 
 
         <!-- SIDEBAR CONTENT -->
@@ -954,11 +999,12 @@
                    class="admin-nav-link
                    {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
 
-                    <i class="fa-solid fa-grid-2"></i>
+                    <i class="fa-solid fa-gauge-high"></i>
 
                     <span>Dashboard</span>
 
                 </a>
+
 
 
                 <!-- ORDERS -->
@@ -974,6 +1020,7 @@
                 </a>
 
 
+
                 <!-- PRODUCTS -->
 
                 <a href="{{ url_for('admin_products') }}"
@@ -985,6 +1032,7 @@
                     <span>Products</span>
 
                 </a>
+
 
 
                 <!-- CUSTOMERS -->
@@ -1000,6 +1048,7 @@
                 </a>
 
 
+
                 <!-- COUPONS -->
 
                 <a href="{{ url_for('admin_coupons') }}"
@@ -1011,6 +1060,7 @@
                     <span>Coupons</span>
 
                 </a>
+
 
 
                 <!-- SALES REPORTS -->
@@ -1027,6 +1077,7 @@
 
 
             </nav>
+
 
 
             <!-- STORE -->
@@ -1051,10 +1102,12 @@
                 </a>
 
 
+
                 <!-- CATEGORIES -->
 
                 <a href="{{ url_for('admin_categories') }}"
-                   class="admin-nav-link">
+                   class="admin-nav-link
+                   {% if request.endpoint == 'admin_categories' %}active{% endif %}">
 
                     <i class="fa-solid fa-layer-group"></i>
 
@@ -1069,9 +1122,8 @@
         </div>
 
 
-        <!-- =================================================
-             SIDEBAR FOOTER
-        ================================================== -->
+
+        <!-- SIDEBAR FOOTER -->
 
         <div class="admin-sidebar-footer">
 
@@ -1102,16 +1154,15 @@
     </aside>
 
 
+
     <!-- =================================================
-         MAIN AREA
+         ADMIN MAIN
     ================================================== -->
 
     <div class="admin-main">
 
 
-        <!-- =================================================
-             TOPBAR
-        ================================================== -->
+        <!-- TOPBAR -->
 
         <header class="admin-topbar">
 
@@ -1119,7 +1170,7 @@
             <div class="admin-topbar-left">
 
 
-                <!-- MOBILE MENU -->
+                <!-- MOBILE MENU BUTTON -->
 
                 <button type="button"
                         class="admin-mobile-toggle"
@@ -1133,36 +1184,52 @@
                 </button>
 
 
+                <!-- PAGE TITLE -->
+
                 <div class="admin-top-title">
 
+
                     {% if request.endpoint == 'admin_dashboard' %}
+
                         Dashboard
 
                     {% elif request.endpoint in ['admin_orders','admin_order_details'] %}
+
                         Orders
 
                     {% elif request.endpoint == 'admin_products' %}
+
                         Products
 
                     {% elif request.endpoint == 'admin_customers' %}
+
                         Customers
 
                     {% elif request.endpoint in ['admin_coupons','toggle_coupon','delete_coupon'] %}
+
                         Coupons
 
                     {% elif request.endpoint == 'admin_sales_reports' %}
+
                         Sales Reports
 
                     {% elif request.endpoint == 'admin_categories' %}
+
                         Categories
 
                     {% else %}
+
                         Admin Panel
+
                     {% endif %}
 
+
                     <span class="admin-top-subtitle">
+
                         {{ store.store_name }}
+
                     </span>
+
 
                 </div>
 
@@ -1170,12 +1237,11 @@
             </div>
 
 
-            <!-- RIGHT SIDE -->
+
+            <!-- TOPBAR RIGHT -->
 
             <div class="admin-topbar-right">
 
-
-                <!-- STORE -->
 
                 <a href="{{ url_for('home') }}"
                    class="admin-top-icon"
@@ -1187,16 +1253,19 @@
                 </a>
 
 
-                <!-- PROFILE -->
-
                 <div class="admin-profile">
+
 
                     <div class="admin-profile-avatar">
 
                         {% if g.user.get('name') %}
+
                             {{ g.user['name'][0]|upper }}
+
                         {% else %}
+
                             A
+
                         {% endif %}
 
                     </div>
@@ -1207,18 +1276,24 @@
                         <span class="admin-profile-name">
 
                             {% if g.user.get('name') %}
+
                                 {{ g.user['name'] }}
+
                             {% else %}
+
                                 Admin
+
                             {% endif %}
 
                         </span>
+
 
                         <span class="admin-profile-role">
                             Administrator
                         </span>
 
                     </div>
+
 
                 </div>
 
@@ -1229,224 +1304,17 @@
         </header>
 
 
-        <!-- =================================================
-             ADMIN CONTENT
-        ================================================== -->
-
-        <main class="admin-content">
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-
-                {% if messages %}
-
-                    <div class="container"
-                         style="
-                            max-width:100%;
-                            padding:0;
-                            margin-bottom:20px;
-                         ">
-
-                        {% for category, message in messages %}
-
-                            <div class="flash
-                                {{ category }}"
-                                role="alert">
-
-                                {{ message }}
-
-                            </div>
-
-                        {% endfor %}
-
-                    </div>
-
-                {% endif %}
-
-            {% endwith %}
-
-
-            {% block content %}{% endblock %}
-
-        </main>
-
-
     </div>
 
 
 </div>
 
-
-<!-- =====================================================
-     ADMIN SIDEBAR JAVASCRIPT
-====================================================== -->
-
-<script>
-
-(function () {
-
-    const sidebar =
-        document.getElementById("adminSidebar");
-
-    const toggle =
-        document.getElementById("adminMobileToggle");
-
-    const overlay =
-        document.getElementById("adminSidebarOverlay");
-
-
-    if (!sidebar || !toggle || !overlay) {
-        return;
-    }
-
-
-    function openSidebar() {
-
-        sidebar.classList.add("open");
-
-        overlay.classList.add("open");
-
-        toggle.setAttribute(
-            "aria-expanded",
-            "true"
-        );
-
-        document.body.style.overflow = "hidden";
-    }
-
-
-    function closeSidebar() {
-
-        sidebar.classList.remove("open");
-
-        overlay.classList.remove("open");
-
-        toggle.setAttribute(
-            "aria-expanded",
-            "false"
-        );
-
-        document.body.style.overflow = "";
-    }
-
-
-    toggle.addEventListener(
-        "click",
-        function () {
-
-            if (
-                sidebar.classList.contains("open")
-            ) {
-                closeSidebar();
-            } else {
-                openSidebar();
-            }
-
-        }
-    );
-
-
-    overlay.addEventListener(
-        "click",
-        closeSidebar
-    );
-
-
-    /* Close menu after clicking a link on phones */
-
-    sidebar
-        .querySelectorAll("a")
-        .forEach(function (link) {
-
-            link.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        window.innerWidth <= 1000
-                    ) {
-                        closeSidebar();
-                    }
-
-                }
-            );
-
-        });
-
-
-    /* Escape key */
-
-    document.addEventListener(
-        "keydown",
-        function (event) {
-
-            if (
-                event.key === "Escape" &&
-                sidebar.classList.contains("open")
-            ) {
-                closeSidebar();
-            }
-
-        }
-    );
-
-
-    /* Reset when moving back to desktop */
-
-    window.addEventListener(
-        "resize",
-        function () {
-
-            if (window.innerWidth > 1000) {
-                closeSidebar();
-            }
-
-        }
-    );
-
-})();
-
-</script>
-
-
 {% else %}
 
 
 <!-- =====================================================
-     NORMAL CUSTOMER WEBSITE
+     NORMAL CUSTOMER HEADER
 ====================================================== -->
-
-
-{% if session.get('impersonating_admin_id') %}
-
-<div style="
-    background:#171923;
-    color:white;
-    padding:10px 16px;
-    text-align:center;
-    font-size:13px;
-    font-weight:600;
-">
-
-    <i class="fa-solid fa-user-secret"></i>
-
-    Customer Preview Mode
-
-    <a href="{{ url_for('admin_dashboard') }}"
-       style="
-           color:#b6a6ff;
-           margin-left:8px;
-           font-weight:800;
-           text-decoration:none;
-       ">
-        Return to Admin
-    </a>
-
-</div>
-
-{% endif %}
-
-
-<!-- ANNOUNCEMENT -->
 
 {% if store.announcement %}
 
@@ -1459,7 +1327,6 @@
 {% endif %}
 
 
-<!-- HEADER -->
 
 <header class="site-header">
 
@@ -1470,6 +1337,7 @@
 
         <a href="{{ url_for('home') }}"
            class="brand">
+
 
             {% if store.logo_url %}
 
@@ -1493,10 +1361,12 @@
 
             </span>
 
+
         </a>
 
 
-        <!-- MOBILE NAV BUTTON -->
+
+        <!-- MOBILE NAV -->
 
         <button class="nav-toggle"
                 id="navToggle"
@@ -1508,6 +1378,7 @@
             <i class="fa-solid fa-bars"></i>
 
         </button>
+
 
 
         <!-- NAVIGATION -->
@@ -1546,8 +1417,6 @@
             </a>
 
 
-            <!-- CART -->
-
             <a href="{{ url_for('cart') }}"
                class="{% if request.endpoint == 'cart' %}active{% endif %}">
 
@@ -1558,34 +1427,33 @@
             </a>
 
 
-            <!-- ADMIN -->
 
             {% if g.user and g.user['is_admin'] %}
 
-                <a href="{{ url_for('admin_dashboard') }}">
+            <a href="{{ url_for('admin_dashboard') }}">
 
-                    <i class="fa-solid fa-gauge-high"></i>
+                <i class="fa-solid fa-gauge-high"></i>
 
-                    Admin
+                Admin
 
-                </a>
+            </a>
 
             {% endif %}
 
 
-            <!-- ACCOUNT -->
 
             {% if g.user %}
 
+
                 {% if not g.user['is_admin'] %}
 
-                    <a href="{{ url_for('dashboard') }}">
+                <a href="{{ url_for('dashboard') }}">
 
-                        <i class="fa-solid fa-user"></i>
+                    <i class="fa-solid fa-user"></i>
 
-                        Account
+                    Account
 
-                    </a>
+                </a>
 
                 {% endif %}
 
@@ -1598,34 +1466,84 @@
 
                 </a>
 
+
             {% else %}
 
+
                 <a href="{{ url_for('login') }}">
-
                     Login
-
                 </a>
 
 
                 <a href="{{ url_for('register') }}">
-
                     Register
-
                 </a>
+
 
             {% endif %}
 
 
         </nav>
 
+
     </div>
 
 </header>
 
+{% endif %}
 
-<!-- MAIN -->
+
+
+<!-- =====================================================
+     SINGLE CONTENT BLOCK
+====================================================== -->
+
+{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
+
+<main class="admin-main-content">
+
+    <div class="admin-content">
+
+
+        {% with messages =
+            get_flashed_messages(with_categories=true)
+        %}
+
+            {% if messages %}
+
+            <div class="admin-flashes">
+
+                {% for category, message in messages %}
+
+                <div class="flash {{ category }}"
+                     role="alert">
+
+                    {{ message }}
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        {% block content %}{% endblock %}
+
+
+    </div>
+
+</main>
+
+
+{% else %}
+
 
 <main>
+
 
     {% with messages =
         get_flashed_messages(with_categories=true)
@@ -1633,20 +1551,20 @@
 
         {% if messages %}
 
-            <div class="container">
+        <div class="container">
 
-                {% for category, message in messages %}
+            {% for category, message in messages %}
 
-                    <div class="flash {{ category }}"
-                         role="alert">
+            <div class="flash {{ category }}"
+                 role="alert">
 
-                        {{ message }}
-
-                    </div>
-
-                {% endfor %}
+                {{ message }}
 
             </div>
+
+            {% endfor %}
+
+        </div>
 
         {% endif %}
 
@@ -1655,20 +1573,24 @@
 
     {% block content %}{% endblock %}
 
+
 </main>
 
-
-<!-- FOOTER -->
 
 <footer class="site-footer">
 
     <div class="container">
 
         <p>
+
             &copy;
+
             {{ current_year or 2026 }}
+
             {{ store.store_name }}.
+
             All rights reserved.
+
         </p>
 
     </div>
@@ -1676,17 +1598,161 @@
 </footer>
 
 
-<!-- =====================================================
-     NORMAL WEBSITE JAVASCRIPT
-====================================================== -->
-
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 
 
 {% endif %}
 
 
+
+<!-- =====================================================
+     ADMIN JAVASCRIPT
+====================================================== -->
+
+{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
+
+<script>
+
+(function () {
+
+    const sidebar =
+        document.getElementById("adminSidebar");
+
+    const toggle =
+        document.getElementById("adminMobileToggle");
+
+    const overlay =
+        document.getElementById("adminSidebarOverlay");
+
+
+    if (!sidebar || !toggle || !overlay) {
+        return;
+    }
+
+
+    function openSidebar() {
+
+        sidebar.classList.add("open");
+
+        overlay.classList.add("open");
+
+        toggle.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+        document.body.style.overflow = "hidden";
+
+    }
+
+
+    function closeSidebar() {
+
+        sidebar.classList.remove("open");
+
+        overlay.classList.remove("open");
+
+        toggle.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+        document.body.style.overflow = "";
+
+    }
+
+
+    toggle.addEventListener(
+        "click",
+        function () {
+
+            if (
+                sidebar.classList.contains("open")
+            ) {
+
+                closeSidebar();
+
+            } else {
+
+                openSidebar();
+
+            }
+
+        }
+    );
+
+
+    overlay.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+
+    sidebar
+        .querySelectorAll("a")
+        .forEach(function (link) {
+
+            link.addEventListener(
+                "click",
+                function () {
+
+                    if (
+                        window.innerWidth <= 1000
+                    ) {
+
+                        closeSidebar();
+
+                    }
+
+                }
+            );
+
+        });
+
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key === "Escape" &&
+                sidebar.classList.contains("open")
+            ) {
+
+                closeSidebar();
+
+            }
+
+        }
+    );
+
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            if (
+                window.innerWidth > 1000
+            ) {
+
+                closeSidebar();
+
+            }
+
+        }
+    );
+
+
+})();
+
+</script>
+
+{% endif %}
+
+
+
 {% block scripts %}{% endblock %}
 
+
 </body>
-</html>
+    </html>
