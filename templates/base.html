@@ -38,10 +38,6 @@
     {% block head %}{% endblock %}
 
     <style>
-        /* =========================================================
-           GLOBAL
-           ========================================================= */
-
         :root {
             --primary:
                 {{ store.primary_color if store and store.primary_color else '#6d4aff' }};
@@ -182,7 +178,13 @@
             color: #b9a9ff;
         }
 
-        .impersonation-bar a {
+        .impersonation-bar form {
+            margin: 0;
+        }
+
+        .impersonation-bar button {
+            border: 0;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -193,7 +195,7 @@
             font-weight: 700;
         }
 
-        .impersonation-bar a:hover {
+        .impersonation-bar button:hover {
             background: var(--primary-dark);
         }
 
@@ -904,11 +906,13 @@
     and request.path.startswith('/admin')
 %}
 
+
 <!-- =========================================================
      IMPERSONATION BAR
      ========================================================= -->
 
 {% if is_impersonating %}
+
 <div class="impersonation-bar">
 
     <i class="fa-solid fa-user-shield"></i>
@@ -918,8 +922,7 @@
     </span>
 
     <form action="{{ url_for('return_from_customer') }}"
-          method="post"
-          style="margin:0;">
+          method="post">
 
         {% if csrf_token is defined %}
             <input type="hidden"
@@ -927,19 +930,7 @@
                    value="{{ csrf_token() }}">
         {% endif %}
 
-        <button type="submit"
-                style="
-                    border:0;
-                    cursor:pointer;
-                    display:inline-flex;
-                    align-items:center;
-                    gap:6px;
-                    padding:7px 12px;
-                    border-radius:9px;
-                    background:var(--primary);
-                    color:#fff;
-                    font-weight:700;
-                ">
+        <button type="submit">
             <i class="fa-solid fa-arrow-left"></i>
             Return to Admin
         </button>
@@ -947,6 +938,7 @@
     </form>
 
 </div>
+
 {% endif %}
 
 
@@ -965,16 +957,21 @@
         <div class="flash {{ category }}">
 
             {% if category == 'success' %}
+
                 <i class="fa-solid fa-circle-check"></i>
 
             {% elif category == 'danger' or category == 'error' %}
+
                 <i class="fa-solid fa-circle-exclamation"></i>
 
             {% elif category == 'warning' %}
+
                 <i class="fa-solid fa-triangle-exclamation"></i>
 
             {% else %}
+
                 <i class="fa-solid fa-circle-info"></i>
+
             {% endif %}
 
             <div>
@@ -992,10 +989,18 @@
 {% endwith %}
 
 
+<!-- =========================================================
+     ADMIN / CUSTOMER STRUCTURE
+     
+     IMPORTANT:
+     The content block is defined ONLY ONCE below.
+     ========================================================= -->
+
+
 {% if is_admin_page %}
 
 <!-- =========================================================
-     ADMIN PANEL
+     ADMIN PANEL OPEN
      ========================================================= -->
 
 <div class="admin-page">
@@ -1050,32 +1055,46 @@
 
                 <a href="{{ url_for('admin_dashboard') }}"
                    class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+
                     <i class="fa-solid fa-gauge-high"></i>
                     Dashboard
+
                 </a>
+
 
                 <a href="{{ url_for('admin_orders') }}"
                    class="{% if request.endpoint in ['admin_orders', 'admin_order_details'] %}active{% endif %}">
+
                     <i class="fa-solid fa-cart-shopping"></i>
                     Orders
+
                 </a>
+
 
                 <a href="{{ url_for('admin_customers') }}"
                    class="{% if request.endpoint == 'admin_customers' %}active{% endif %}">
+
                     <i class="fa-solid fa-users"></i>
                     Customers
+
                 </a>
+
 
                 <a href="{{ url_for('admin_coupons') }}"
                    class="{% if request.endpoint in ['admin_coupons', 'admin_coupon_toggle', 'admin_coupon_delete'] %}active{% endif %}">
+
                     <i class="fa-solid fa-ticket"></i>
                     Coupons
+
                 </a>
+
 
                 <a href="{{ url_for('admin_sales_reports') }}"
                    class="{% if request.endpoint == 'admin_sales_reports' %}active{% endif %}">
+
                     <i class="fa-solid fa-chart-column"></i>
                     Sales Reports
+
                 </a>
 
             </nav>
@@ -1089,20 +1108,28 @@
 
                 <a href="{{ url_for('admin_categories') }}"
                    class="{% if request.endpoint in ['admin_categories', 'edit_category'] %}active{% endif %}">
+
                     <i class="fa-solid fa-layer-group"></i>
                     Categories
+
                 </a>
+
 
                 <a href="{{ url_for('admin_products') }}"
                    class="{% if request.endpoint in ['admin_products', 'add_product', 'edit_product'] %}active{% endif %}">
+
                     <i class="fa-solid fa-box"></i>
                     Products
+
                 </a>
+
 
                 <a href="{{ url_for('admin_settings') }}"
                    class="{% if request.endpoint == 'admin_settings' %}active{% endif %}">
+
                     <i class="fa-solid fa-gear"></i>
                     Store Settings
+
                 </a>
 
             </nav>
@@ -1116,19 +1143,26 @@
 
                 <a href="{{ url_for('admin_profile') }}"
                    class="{% if request.endpoint == 'admin_profile' %}active{% endif %}">
+
                     <i class="fa-solid fa-user-gear"></i>
                     Admin Profile
+
                 </a>
 
-                <a href="{{ url_for('index') }}"
-                   target="_self">
+
+                <a href="{{ url_for('index') }}">
+
                     <i class="fa-solid fa-store"></i>
                     View Store
+
                 </a>
 
+
                 <a href="{{ url_for('logout') }}">
+
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Logout
+
                 </a>
 
             </nav>
@@ -1146,8 +1180,10 @@
                 </p>
 
                 <a href="{{ url_for('index') }}#contact">
+
                     <i class="fa-solid fa-headset"></i>
                     Contact Support
+
                 </a>
 
             </div>
@@ -1155,7 +1191,7 @@
         </aside>
 
 
-        <!-- OVERLAY -->
+        <!-- ADMIN OVERLAY -->
 
         <div class="admin-overlay"
              id="adminOverlay"
@@ -1166,8 +1202,6 @@
         <!-- ADMIN MAIN -->
 
         <div class="admin-main">
-
-            <!-- TOPBAR -->
 
             <header class="admin-topbar">
 
@@ -1181,6 +1215,7 @@
                         <i class="fa-solid fa-bars"></i>
 
                     </button>
+
 
                     <a href="{{ url_for('index') }}"
                        class="admin-store-link">
@@ -1221,20 +1256,10 @@
             </header>
 
 
-            <!-- ADMIN CONTENT -->
-
-            <main class="admin-content">
-
-                {% block content %}{% endblock %}
-
-            </main>
-
-        </div>
-
-    </div>
-
-</div>
-
+            <!--
+                The actual content block is placed AFTER
+                the admin/customer conditional structure.
+            -->
 
 {% else %}
 
@@ -1320,10 +1345,6 @@
 
             {% if not store or store.get('nav_contact', '1') == '1' %}
 
-            <!-- IMPORTANT:
-                 There is no Flask "contact" endpoint.
-                 Contact points to the homepage contact section. -->
-
             <a href="{{ url_for('index') }}#contact">
                 <i class="fa-solid fa-envelope"></i>
                 Contact
@@ -1367,6 +1388,7 @@
 
                 {% endif %}
 
+
                 <a href="{{ url_for('logout') }}">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Logout
@@ -1378,6 +1400,7 @@
                     <i class="fa-solid fa-right-to-bracket"></i>
                     Login
                 </a>
+
 
                 <a href="{{ url_for('register') }}">
                     <i class="fa-solid fa-user-plus"></i>
@@ -1456,7 +1479,9 @@
 
 
         <a href="{{ url_for('cart') }}">
+
             <i class="fa-solid fa-cart-shopping"></i>
+
             Cart
 
             {% if cart_count is defined and cart_count|int > 0 %}
@@ -1471,34 +1496,51 @@
             {% if g.user['is_admin'] %}
 
             <a href="{{ url_for('admin_dashboard') }}">
+
                 <i class="fa-solid fa-gauge-high"></i>
+
                 Admin Dashboard
+
             </a>
 
             {% else %}
 
             <a href="{{ url_for('dashboard') }}">
+
                 <i class="fa-solid fa-user"></i>
+
                 My Account
+
             </a>
 
             {% endif %}
 
+
             <a href="{{ url_for('logout') }}">
+
                 <i class="fa-solid fa-right-from-bracket"></i>
+
                 Logout
+
             </a>
 
         {% else %}
 
             <a href="{{ url_for('login') }}">
+
                 <i class="fa-solid fa-right-to-bracket"></i>
+
                 Login
+
             </a>
 
+
             <a href="{{ url_for('register') }}">
+
                 <i class="fa-solid fa-user-plus"></i>
+
                 Create Account
+
             </a>
 
         {% endif %}
@@ -1507,15 +1549,47 @@
 
 </header>
 
+{% endif %}
 
-<!-- CUSTOMER MAIN -->
+
+<!-- =========================================================
+     SINGLE CONTENT BLOCK
+     
+     THIS IS THE ONLY {% block content %} IN THIS FILE.
+     ========================================================= -->
+
+{% if is_admin_page %}
+
+<main class="admin-content">
+
+{% else %}
 
 <main class="site-main">
+
+{% endif %}
 
     {% block content %}{% endblock %}
 
 </main>
 
+
+<!-- =========================================================
+     CLOSE ADMIN / CUSTOMER STRUCTURE
+     ========================================================= -->
+
+{% if is_admin_page %}
+
+        </div>
+        <!-- END admin-main -->
+
+    </div>
+    <!-- END admin-layout -->
+
+</div>
+<!-- END admin-page -->
+
+
+{% else %}
 
 <!-- =========================================================
      CUSTOMER FOOTER
@@ -1566,8 +1640,10 @@
 
 
                     <p>
+
                         {{ store.description if store and store.description else
                            'Shop quality products online with a simple and convenient shopping experience.' }}
+
                     </p>
 
                 </div>
@@ -1595,6 +1671,7 @@
                             Categories
                         </a>
 
+
                         {% if not store or store.get('nav_about', '1') == '1' %}
 
                         <a href="{{ url_for('index') }}#about">
@@ -1602,6 +1679,7 @@
                         </a>
 
                         {% endif %}
+
 
                         {% if not store or store.get('nav_contact', '1') == '1' %}
 
@@ -1630,6 +1708,7 @@
                             Cart
                         </a>
 
+
                         {% if g.user %}
 
                             {% if g.user['is_admin'] %}
@@ -1646,6 +1725,7 @@
 
                             {% endif %}
 
+
                             <a href="{{ url_for('logout') }}">
                                 Logout
                             </a>
@@ -1655,6 +1735,7 @@
                             <a href="{{ url_for('login') }}">
                                 Login
                             </a>
+
 
                             <a href="{{ url_for('register') }}">
                                 Register
@@ -1754,10 +1835,15 @@
         <div class="container footer-bottom-inner">
 
             <span>
+
                 © {{ current_year if current_year is defined else '2026' }}
+
                 {{ store.store_name if store and store.store_name else 'Online Store' }}.
+
                 All rights reserved.
+
             </span>
+
 
             <span>
                 Powered by S&A CreativeMind
@@ -1784,8 +1870,11 @@
 
     function toggleMobileMenu() {
 
-        const menu = document.getElementById("mobileMenu");
-        const button = document.getElementById("mobileMenuButton");
+        const menu =
+            document.getElementById("mobileMenu");
+
+        const button =
+            document.getElementById("mobileMenuButton");
 
         if (!menu) {
             return;
@@ -1796,15 +1885,19 @@
         if (menu.classList.contains("open")) {
 
             if (button) {
+
                 button.innerHTML =
                     '<i class="fa-solid fa-xmark"></i>';
+
             }
 
         } else {
 
             if (button) {
+
                 button.innerHTML =
                     '<i class="fa-solid fa-bars"></i>';
+
             }
 
         }
@@ -1815,72 +1908,95 @@
        CLOSE MOBILE MENU AFTER LINK CLICK
        ========================================================= */
 
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
 
-        document.querySelectorAll(
-            "#mobileMenu a"
-        ).forEach(function (link) {
+            document.querySelectorAll(
+                "#mobileMenu a"
+            ).forEach(
+                function (link) {
 
-            link.addEventListener(
-                "click",
-                function () {
+                    link.addEventListener(
+                        "click",
+                        function () {
 
-                    const menu =
-                        document.getElementById(
-                            "mobileMenu"
-                        );
+                            const menu =
+                                document.getElementById(
+                                    "mobileMenu"
+                                );
 
-                    const button =
-                        document.getElementById(
-                            "mobileMenuButton"
-                        );
+                            const button =
+                                document.getElementById(
+                                    "mobileMenuButton"
+                                );
 
-                    if (menu) {
-                        menu.classList.remove("open");
-                    }
+                            if (menu) {
 
-                    if (button) {
-                        button.innerHTML =
-                            '<i class="fa-solid fa-bars"></i>';
-                    }
+                                menu.classList.remove(
+                                    "open"
+                                );
+
+                            }
+
+                            if (button) {
+
+                                button.innerHTML =
+                                    '<i class="fa-solid fa-bars"></i>';
+
+                            }
+
+                        }
+                    );
 
                 }
             );
 
-        });
 
+            /* =================================================
+               AUTO HIDE FLASH MESSAGES
+               ================================================= */
 
-        /* =====================================================
-           AUTO HIDE FLASH MESSAGES
-           ===================================================== */
+            setTimeout(
+                function () {
 
-        setTimeout(function () {
+                    document.querySelectorAll(
+                        ".flash"
+                    ).forEach(
+                        function (flash) {
 
-            document.querySelectorAll(
-                ".flash"
-            ).forEach(function (flash) {
+                            flash.style.transition =
+                                "opacity .35s ease, transform .35s ease";
 
-                flash.style.transition =
-                    "opacity .35s ease, transform .35s ease";
+                            flash.style.opacity = "0";
 
-                flash.style.opacity = "0";
-                flash.style.transform = "translateY(-8px)";
+                            flash.style.transform =
+                                "translateY(-8px)";
 
-                setTimeout(function () {
+                            setTimeout(
+                                function () {
 
-                    if (flash.parentNode) {
-                        flash.parentNode.removeChild(
-                            flash
-                        );
-                    }
+                                    if (flash.parentNode) {
 
-                }, 400);
+                                        flash.parentNode.removeChild(
+                                            flash
+                                        );
 
-            });
+                                    }
 
-        }, 5000);
+                                },
+                                400
+                            );
 
-    });
+                        }
+                    );
+
+                },
+                5000
+            );
+
+        }
+    );
 
 
     /* =========================================================
@@ -1930,11 +2046,19 @@
             );
 
         if (sidebar) {
-            sidebar.classList.remove("open");
+
+            sidebar.classList.remove(
+                "open"
+            );
+
         }
 
         if (overlay) {
-            overlay.classList.remove("show");
+
+            overlay.classList.remove(
+                "show"
+            );
+
         }
 
     }
@@ -1963,14 +2087,18 @@
                     );
 
                 if (mobileMenu) {
+
                     mobileMenu.classList.remove(
                         "open"
                     );
+
                 }
 
                 if (mobileButton) {
+
                     mobileButton.innerHTML =
                         '<i class="fa-solid fa-bars"></i>';
+
                 }
 
             }
@@ -1988,7 +2116,9 @@
         function () {
 
             if (window.innerWidth > 980) {
+
                 closeAdminSidebar();
+
             }
 
         }
@@ -2000,4 +2130,4 @@
 {% block scripts %}{% endblock %}
 
 </body>
-</html>
+    </html>
