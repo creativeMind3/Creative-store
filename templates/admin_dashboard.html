@@ -1,744 +1,1076 @@
-{% extends 'admin_base.html' %}
+{% extends 'base.html' %}
 
-{% block title %}Dashboard · {{ store.store_name }}{% endblock %}
+{% block title %}Admin Dashboard — {{ store.store_name }}{% endblock %}
 
-{% block admin_page %}Dashboard{% endblock %}
-{% block admin_eyebrow %}STORE OVERVIEW{% endblock %}
-{% block admin_heading %}Good to see you, {{ g.user['name'] }}{% endblock %}
-{% block admin_subtitle %}Here is a quick overview of what is happening in your store today.{% endblock %}
+{% block content %}
 
-{% block admin_heading_action %}
-<a class="btn primary" href="{{ url_for('add_product') }}">
-    <i class="fa-solid fa-plus"></i> Add product
-</a>
-{% endblock %}
-
-{% block admin_content %}
-
-<!-- =========================
-     KPI CARDS
-========================= -->
-<div class="admin-kpis">
-
-    <div class="kpi">
-        <span class="kpi-icon">
-            <i class="fa-solid fa-boxes-stacked"></i>
-        </span>
-        <small>Products</small>
-        <strong>{{ stats.products }}</strong>
-        <em>Catalogue items</em>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-icon">
-            <i class="fa-solid fa-cart-shopping"></i>
-        </span>
-        <small>Orders</small>
-        <strong>{{ stats.orders }}</strong>
-        <em>All time</em>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-icon">
-            <i class="fa-solid fa-users"></i>
-        </span>
-        <small>Customers</small>
-        <strong>{{ stats.customers }}</strong>
-        <em>Registered</em>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-icon">
-            <i class="fa-solid fa-naira-sign"></i>
-        </span>
-        <small>Sales</small>
-        <strong>
-            {{ store.currency }}{{ '{:,.0f}'.format(stats.sales) }}
-        </strong>
-        <em>Excluding cancelled</em>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-icon">
-            <i class="fa-solid fa-clock"></i>
-        </span>
-        <small>Pending</small>
-        <strong>{{ stats.pending }}</strong>
-        <em>Need attention</em>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-icon">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-        </span>
-        <small>Low stock</small>
-        <strong>{{ stats.low_stock }}</strong>
-        <em>5 units or less</em>
-    </div>
-
-</div>
-
-
-<!-- =========================
-     QUICK ACTIONS
-========================= -->
-<div class="dashboard-quick-actions">
-
-    <a class="quick-action-card"
-       href="{{ url_for('admin_coupons') }}">
-
-        <span class="quick-action-icon coupon-icon">
-            <i class="fa-solid fa-ticket"></i>
-        </span>
-
-        <div class="quick-action-content">
-            <strong>Coupons</strong>
-            <small>Create and manage discount codes</small>
-        </div>
-
-        <span class="quick-action-arrow">
-            <i class="fa-solid fa-arrow-right"></i>
-        </span>
-
-    </a>
-
-
-    <a class="quick-action-card"
-       href="{{ url_for('admin_sales_reports') }}">
-
-        <span class="quick-action-icon report-icon">
-            <i class="fa-solid fa-chart-line"></i>
-        </span>
-
-        <div class="quick-action-content">
-            <strong>Sales Reports</strong>
-            <small>View sales and store performance</small>
-        </div>
-
-        <span class="quick-action-arrow">
-            <i class="fa-solid fa-arrow-right"></i>
-        </span>
-
-    </a>
-
-
-    <a class="quick-action-card"
-       href="{{ url_for('admin_orders') }}">
-
-        <span class="quick-action-icon order-icon">
-            <i class="fa-solid fa-box"></i>
-        </span>
-
-        <div class="quick-action-content">
-            <strong>Orders</strong>
-            <small>Manage customer purchases</small>
-        </div>
-
-        <span class="quick-action-arrow">
-            <i class="fa-solid fa-arrow-right"></i>
-        </span>
-
-    </a>
-
-
-    <a class="quick-action-card"
-       href="{{ url_for('admin_products') }}">
-
-        <span class="quick-action-icon product-icon">
-            <i class="fa-solid fa-store"></i>
-        </span>
-
-        <div class="quick-action-content">
-            <strong>Products</strong>
-            <small>Manage your product catalogue</small>
-        </div>
-
-        <span class="quick-action-arrow">
-            <i class="fa-solid fa-arrow-right"></i>
-        </span>
-
-    </a>
-
-</div>
-
-
-<!-- =========================
-     ORDER STATUS + STORE HEALTH
-========================= -->
-<div class="admin-grid-two">
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>Order status</h2>
-                <p>Current order pipeline</p>
-            </div>
-
-            <a href="{{ url_for('admin_orders') }}">
-                View orders
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        <div class="status-bars">
-
-            {% for s in status_options %}
-
-            <div class="status-bar-row">
-
-                <div>
-                    <span>{{ s }}</span>
-                    <b>{{ status_counts[s] }}</b>
-                </div>
-
-                <div class="bar">
-
-                    <i
-                        class="{{ s|lower }}"
-                        style="width: {{ ((status_counts[s] / (stats.orders or 1))*100)|round(0) }}%">
-                    </i>
-
-                </div>
-
-            </div>
-
-            {% endfor %}
-
-        </div>
-
-    </section>
-
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>Store health</h2>
-                <p>Quick operational checks</p>
-            </div>
-
-            <a href="{{ url_for('admin_settings') }}">
-                Settings
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        <div class="health-list">
-
-            <div>
-                <span>Catalogue</span>
-                <b class="health-good">
-                    {{ stats.products }} products
-                </b>
-            </div>
-
-            <div>
-                <span>Customers</span>
-                <b class="health-good">
-                    {{ stats.customers }} accounts
-                </b>
-            </div>
-
-            <div>
-                <span>Pending orders</span>
-                <b class="{{ 'health-warn' if stats.pending else 'health-good' }}">
-                    {{ stats.pending }}
-                </b>
-            </div>
-
-            <div>
-                <span>Stock alerts</span>
-                <b class="{{ 'health-warn' if stats.low_stock else 'health-good' }}">
-                    {{ stats.low_stock }}
-                </b>
-            </div>
-
-        </div>
-
-    </section>
-
-</div>
-
-
-<!-- =========================
-     RECENT ORDERS + TOP PRODUCTS
-========================= -->
-<div class="admin-grid-two large">
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>Recent orders</h2>
-                <p>Latest customer purchases</p>
-            </div>
-
-            <a href="{{ url_for('admin_orders') }}">
-                View all
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        <div class="table-wrap">
-
-            <table class="admin-table">
-
-                <thead>
-
-                    <tr>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for o in recent_orders %}
-
-                    <tr>
-
-                        <td>
-
-                            <a
-                                class="order-number"
-                                href="{{ url_for('admin_order_details', order_id=o['id']) }}"
-                            >
-                                #{{ o['id'] }}
-                            </a>
-
-                            <small>
-                                {{ o['created_at'] }}
-                            </small>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-                                {{ o['customer_name'] }}
-                            </strong>
-
-                            <small>
-                                {{ o['email'] }}
-                            </small>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-                                {{ store.currency }}{{ '{:,.0f}'.format(o['total']) }}
-                            </strong>
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="status {{ o['status']|lower }}">
-                                {{ o['status'] }}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <a
-                                class="action-btn"
-                                href="{{ url_for('admin_order_details', order_id=o['id']) }}"
-                            >
-                                <i class="fa-regular fa-eye"></i>
-                                View
-                            </a>
-
-                        </td>
-
-                    </tr>
-
-                    {% else %}
-
-                    <tr>
-                        <td colspan="5" class="empty-cell">
-                            No orders yet.
-                        </td>
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </section>
-
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>Top products</h2>
-                <p>Best performers by quantity sold</p>
-            </div>
-
-            <a href="{{ url_for('admin_products') }}">
-                Products
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        {% for p in top_products %}
-
-        <div class="product-mini">
-
-            <div class="mini-thumb">
-
-                {% if p['image'] %}
-
-                <img
-                    src="{{ url_for('uploaded_file', filename=p['image']) }}"
-                    alt=""
-                >
-
-                {% else %}
-
-                B
-
-                {% endif %}
-
-            </div>
-
-
-            <div>
-
-                <strong>
-                    {{ p['name'] }}
-                </strong>
-
-                <small>
-                    {{ p['sold'] }} sold
-                </small>
-
-            </div>
-
-
-            <b>
-                {{ store.currency }}{{ '{:,.0f}'.format(p['revenue']) }}
-            </b>
-
-        </div>
-
-        {% else %}
-
-        <div class="empty">
-            Add products to start tracking sales.
-        </div>
-
-        {% endfor %}
-
-    </section>
-
-</div>
-
-
-<!-- =========================
-     LOW STOCK + CUSTOMERS + SUMMARY
-========================= -->
-<div class="admin-grid-three">
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>Low stock</h2>
-                <p>Items to restock soon</p>
-            </div>
-
-            <a href="{{ url_for('admin_products') }}">
-                Manage
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        {% for p in low_stock %}
-
-        <div class="mini-row">
-
-            <span>
-                {{ p['name'] }}
-            </span>
-
-            <b class="stock-danger">
-                {{ p['stock'] }}
-            </b>
-
-        </div>
-
-        {% else %}
-
-        <div class="empty">
-            All products are well stocked.
-        </div>
-
-        {% endfor %}
-
-    </section>
-
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>New customers</h2>
-                <p>Recently registered shoppers</p>
-            </div>
-
-            <a href="{{ url_for('admin_customers') }}">
-                View all
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        {% for c in recent_customers %}
-
-        <div class="customer-mini">
-
-            <span>
-                {{ c['name'][0]|upper }}
-            </span>
-
-            <div>
-
-                <strong>
-                    {{ c['name'] }}
-                </strong>
-
-                <small>
-                    {{ c['email'] }}
-                </small>
-
-            </div>
-
-        </div>
-
-        {% else %}
-
-        <div class="empty">
-            No customers yet.
-        </div>
-
-        {% endfor %}
-
-    </section>
-
-
-    <section class="data-card dashboard-panel">
-
-        <div class="card-head">
-
-            <div>
-                <h2>Store summary</h2>
-                <p>Current configuration</p>
-            </div>
-
-            <a href="{{ url_for('admin_settings') }}">
-                Edit
-                <i class="fa-solid fa-arrow-right"></i>
-            </a>
-
-        </div>
-
-
-        <div class="summary-list">
-
-            <p>
-                <span>Store</span>
-                <b>{{ store.store_name }}</b>
-            </p>
-
-            <p>
-                <span>Currency</span>
-                <b>{{ store.currency }}</b>
-            </p>
-
-            <p>
-                <span>WhatsApp</span>
-                <b>
-                    {{ 'Connected' if store.whatsapp else 'Not set' }}
-                </b>
-            </p>
-
-            <p>
-                <span>Menu</span>
-                <b>Responsive</b>
-            </p>
-
-        </div>
-
-    </section>
-
-</div>
-
-
-<!-- =========================
-     QUICK ACTIONS CSS
-========================= -->
 <style>
+/* =========================================================
+   MODERN ADMIN DASHBOARD
+   ========================================================= */
 
-.dashboard-quick-actions {
+.admin-dashboard {
+    background: #f7f7fb;
+    min-height: 100vh;
+    padding: 24px 0 60px;
+}
+
+.admin-wrap {
+    width: min(1180px, calc(100% - 32px));
+    margin: 0 auto;
+}
+
+/* Hide Products + Categories from the mobile/sidebar menu
+   on the admin dashboard. The actual links remain available
+   through the dashboard cards. */
+@media (max-width: 900px) {
+    body .nav-menu a[href*="/admin/products"],
+    body .nav-menu a[href*="/admin/categories"],
+    body .mobile-menu a[href*="/admin/products"],
+    body .mobile-menu a[href*="/admin/categories"],
+    body a[href="/admin/products"],
+    body a[href="/admin/categories"] {
+        display: none !important;
+    }
+}
+
+/* Header */
+.admin-hero {
+    background: linear-gradient(135deg, #19152c 0%, #6d4aff 100%);
+    color: #fff;
+    border-radius: 26px;
+    padding: 28px;
+    margin-bottom: 22px;
+    box-shadow: 0 18px 45px rgba(55, 35, 125, .18);
+}
+
+.admin-hero-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 22px;
+}
+
+.admin-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.72);
+}
+
+.admin-hero h1 {
+    margin: 8px 0 6px;
+    font-size: clamp(25px, 4vw, 36px);
+    line-height: 1.1;
+    color: #fff;
+}
+
+.admin-hero p {
+    margin: 0;
+    color: rgba(255,255,255,.82);
+    line-height: 1.6;
+}
+
+.admin-date {
+    min-width: 190px;
+    padding: 15px 17px;
+    border-radius: 17px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(8px);
+}
+
+.admin-date strong {
+    display: block;
+    font-size: 14px;
+    color: #fff;
+}
+
+.admin-date span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255,255,255,.68);
+}
+
+/* Statistics */
+.stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
-    margin: 24px 0;
+    margin-bottom: 22px;
 }
 
-.quick-action-card {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    min-height: 82px;
-    padding: 16px 17px;
-    background: #ffffff;
-    border: 1px solid #e7ebf0;
-    border-radius: 16px;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: 0 6px 22px rgba(16, 24, 40, 0.045);
-    transition:
-        transform .2s ease,
-        box-shadow .2s ease,
-        border-color .2s ease;
-}
-
-.quick-action-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(16, 24, 40, 0.09);
-    border-color: #d7dde5;
-}
-
-.quick-action-icon {
-    width: 45px;
-    height: 45px;
-    min-width: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 13px;
-    font-size: 18px;
-}
-
-.coupon-icon {
-    background: #fff3df;
-    color: #c87900;
-}
-
-.report-icon {
-    background: #eaf4ff;
-    color: #1677c8;
-}
-
-.order-icon {
-    background: #edf9f1;
-    color: #198754;
-}
-
-.product-icon {
-    background: #f2edff;
-    color: #6842c2;
-}
-
-.quick-action-content {
-    flex: 1;
+.stat-card {
+    background: #fff;
+    border: 1px solid #ebeaf2;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 26px rgba(26, 20, 55, .05);
     min-width: 0;
 }
 
-.quick-action-content strong {
-    display: block;
-    font-size: 14px;
-    font-weight: 800;
-    line-height: 1.3;
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: #f0ecff;
+    color: #6d4aff;
+    font-size: 18px;
+    margin-bottom: 15px;
 }
 
-.quick-action-content small {
-    display: block;
-    margin-top: 4px;
-    color: #667085;
+.stat-card.sales .stat-icon {
+    background: #ecfdf4;
+    color: #15945b;
+}
+
+.stat-card.pending .stat-icon {
+    background: #fff6e5;
+    color: #d78b08;
+}
+
+.stat-card.stock .stat-icon {
+    background: #fff0f1;
+    color: #d34c59;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #777486;
+    font-weight: 750;
+}
+
+.stat-value {
+    margin-top: 7px;
+    font-size: clamp(23px, 3vw, 30px);
+    line-height: 1.15;
+    font-weight: 900;
+    color: #191526;
+    overflow-wrap: anywhere;
+}
+
+.stat-note {
+    margin-top: 6px;
     font-size: 11px;
-    line-height: 1.35;
+    color: #9a96a4;
 }
 
-.quick-action-arrow {
-    color: #98a2b3;
+/* Section */
+.dashboard-section {
+    background: #fff;
+    border: 1px solid #ebeaf2;
+    border-radius: 22px;
+    padding: 22px;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 26px rgba(26, 20, 55, .05);
+}
+
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 17px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: #f0ecff;
+    color: #6d4aff;
+}
+
+.section-head h2 {
+    margin: 0;
+    font-size: 19px;
+    color: #191526;
+}
+
+.section-head p {
+    margin: 3px 0 0;
+    color: #8d8998;
+    font-size: 12px;
+}
+
+.section-link {
+    color: #6d4aff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.section-link:hover {
+    text-decoration: underline;
+}
+
+/* Quick Actions */
+.quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.quick-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-height: 105px;
+    padding: 17px;
+    border-radius: 18px;
+    text-decoration: none;
+    color: #191526;
+    border: 1px solid #eceaf3;
+    background: #fff;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.quick-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(36, 24, 80, .10);
+}
+
+.quick-card.primary {
+    color: #fff;
+    border: 0;
+    background: linear-gradient(135deg, #6d4aff, #8c69ff);
+}
+
+.quick-card.blue {
+    background: linear-gradient(135deg, #eef7ff, #f8fbff);
+}
+
+.quick-card.orange {
+    background: linear-gradient(135deg, #fff7e9, #fffdfa);
+}
+
+.quick-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    background: rgba(109,74,255,.10);
+    color: #6d4aff;
+    font-size: 19px;
+}
+
+.quick-card.primary .quick-icon {
+    background: rgba(255,255,255,.16);
+    color: #fff;
+}
+
+.quick-card.blue .quick-icon {
+    background: #e2f1ff;
+    color: #2679bd;
+}
+
+.quick-card.orange .quick-icon {
+    background: #fff0cf;
+    color: #bd7900;
+}
+
+.quick-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.quick-content strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.quick-content span {
+    display: block;
+    margin-top: 5px;
+    color: #817d8b;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.quick-card.primary .quick-content span {
+    color: rgba(255,255,255,.78);
+}
+
+.quick-arrow {
+    font-size: 19px;
+    opacity: .65;
+}
+
+/* Categories */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.category-card {
+    position: relative;
+    min-height: 128px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid #ebeaf2;
+    text-decoration: none;
+    overflow: hidden;
+    background: linear-gradient(135deg, #faf9ff, #fff);
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(36,24,80,.09);
+}
+
+.category-number {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #b4afc4;
+}
+
+.category-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: #f0ecff;
+    color: #6d4aff;
+    margin-bottom: 13px;
+}
+
+.category-card:nth-child(2n) .category-icon {
+    background: #eaf5ff;
+    color: #287bbd;
+}
+
+.category-card:nth-child(3n) .category-icon {
+    background: #fff3df;
+    color: #bd7900;
+}
+
+.category-card h3 {
+    margin: 0;
+    color: #191526;
+    font-size: 14px;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+}
+
+.category-card p {
+    margin: 6px 0 0;
+    color: #858190;
+    font-size: 11px;
+}
+
+.category-card .category-arrow {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    color: #6d4aff;
+    font-size: 15px;
+}
+
+/* Order status */
+.status-list {
+    display: grid;
+    gap: 15px;
+}
+
+.status-row {
+    display: grid;
+    grid-template-columns: 105px 1fr 35px;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-name {
     font-size: 13px;
-    transition: transform .2s ease;
+    color: #4e4a58;
+    font-weight: 700;
 }
 
-.quick-action-card:hover .quick-action-arrow {
-    transform: translateX(3px);
+.status-count {
+    text-align: right;
+    font-size: 13px;
+    color: #24202f;
+    font-weight: 900;
 }
 
+.status-track {
+    height: 10px;
+    background: #eef0f5;
+    border-radius: 999px;
+    overflow: hidden;
+}
 
-@media (max-width: 1050px) {
+.status-fill {
+    height: 100%;
+    min-width: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6d4aff, #8d6cff);
+}
 
-    .dashboard-quick-actions {
-        grid-template-columns: repeat(2, 1fr);
+.status-fill.cancelled {
+    background: #d34c59;
+}
+
+/* Lower dashboard */
+.dashboard-columns {
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap: 22px;
+}
+
+.simple-list {
+    display: grid;
+    gap: 10px;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #faf9fc;
+}
+
+.list-icon {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: #f0ecff;
+    color: #6d4aff;
+}
+
+.list-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.list-main strong {
+    display: block;
+    font-size: 13px;
+    color: #282332;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.list-main span {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: #8b8794;
+}
+
+.list-value {
+    font-size: 12px;
+    font-weight: 850;
+    color: #272230;
+    white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 850;
+    background: #f0ecff;
+    color: #6d4aff;
+}
+
+/* Recent orders table */
+.table-wrap {
+    overflow-x: auto;
+}
+
+.dashboard-table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+}
+
+.dashboard-table th {
+    text-align: left;
+    padding: 12px;
+    background: #faf9fc;
+    color: #85808f;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .55px;
+}
+
+.dashboard-table td {
+    padding: 13px 12px;
+    border-top: 1px solid #f0eef4;
+    color: #403b49;
+    font-size: 12px;
+}
+
+.dashboard-table strong {
+    color: #211d2b;
+}
+
+/* Empty */
+.empty-state {
+    padding: 28px 15px;
+    text-align: center;
+    color: #8d8997;
+    font-size: 13px;
+}
+
+/* Mobile */
+@media (max-width: 980px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-}
+    .quick-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
+    .category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-@media (max-width: 600px) {
-
-    .dashboard-quick-actions {
+    .dashboard-columns {
         grid-template-columns: 1fr;
-        gap: 12px;
-        margin: 18px 0;
     }
-
-    .quick-action-card {
-        min-height: 76px;
-        padding: 14px;
-    }
-
 }
 
-
-@media (max-width: 380px) {
-
-    .quick-action-content small {
-        font-size: 10px;
+@media (max-width: 700px) {
+    .admin-dashboard {
+        padding-top: 15px;
     }
 
+    .admin-wrap {
+        width: min(100% - 20px, 620px);
+    }
+
+    .admin-hero {
+        padding: 21px;
+        border-radius: 21px;
+    }
+
+    .admin-hero-inner {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-date {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .stats-grid,
+    .quick-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 11px;
+    }
+
+    .stat-card {
+        padding: 15px;
+        border-radius: 17px;
+    }
+
+    .stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        margin-bottom: 11px;
+    }
+
+    .stat-value {
+        font-size: 22px;
+    }
+
+    .dashboard-section {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .category-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .status-row {
+        grid-template-columns: 78px 1fr 28px;
+        gap: 8px;
+    }
 }
 
+@media (max-width: 430px) {
+    .stats-grid,
+    .quick-grid,
+    .category-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-card {
+        min-height: 92px;
+    }
+
+    .section-head {
+        align-items: flex-start;
+    }
+
+    .section-link {
+        font-size: 11px;
+    }
+}
 </style>
+
+<section class="admin-dashboard">
+    <div class="admin-wrap">
+
+        <!-- HERO -->
+        <div class="admin-hero">
+            <div class="admin-hero-inner">
+                <div>
+                    <span class="admin-eyebrow">
+                        <i class="fa-solid fa-chart-line"></i>
+                        Store Dashboard
+                    </span>
+
+                    <h1>Welcome back, Admin!</h1>
+
+                    <p>
+                        Here’s what’s happening with
+                        <strong>{{ store.store_name }}</strong> today.
+                    </p>
+                </div>
+
+                <div class="admin-date">
+                    <strong>
+                        <i class="fa-regular fa-calendar"></i>
+                        {{ now().strftime('%a, %d %b %Y') if now is defined else 'Store Overview' }}
+                    </strong>
+                    <span>Admin control centre</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTICS -->
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                <div class="stat-label">Total Orders</div>
+                <div class="stat-value">{{ stats.orders }}</div>
+                <div class="stat-note">All customer orders</div>
+            </div>
+
+            <div class="stat-card sales">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-naira-sign"></i>
+                </div>
+                <div class="stat-label">Total Sales</div>
+                <div class="stat-value">₦{{ "{:,.0f}".format(stats.sales|float) }}</div>
+                <div class="stat-note">Excluding cancelled orders</div>
+            </div>
+
+            <div class="stat-card pending">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="stat-label">Pending Orders</div>
+                <div class="stat-value">{{ stats.pending }}</div>
+                <div class="stat-note">Need attention</div>
+            </div>
+
+            <div class="stat-card stock">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="stat-label">Low Stock</div>
+                <div class="stat-value">{{ stats.low_stock }}</div>
+                <div class="stat-note">5 units or less</div>
+            </div>
+
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <section class="dashboard-section">
+            <div class="section-head">
+                <div>
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h2>Quick Actions</h2>
+                            <p>Manage the most important parts of your store.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-grid">
+
+                <a class="quick-card primary"
+                   href="{{ url_for('admin_coupons') }}">
+                    <div class="quick-icon">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <div class="quick-content">
+                        <strong>Coupons</strong>
+                        <span>Create and manage discount codes</span>
+                    </div>
+                    <div class="quick-arrow">→</div>
+                </a>
+
+                <a class="quick-card blue"
+                   href="{{ url_for('admin_sales_reports') }}">
+                    <div class="quick-icon">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div class="quick-content">
+                        <strong>Sales Reports</strong>
+                        <span>View sales and store performance</span>
+                    </div>
+                    <div class="quick-arrow">→</div>
+                </a>
+
+                <a class="quick-card orange"
+                   href="{{ url_for('admin_categories') }}">
+                    <div class="quick-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="quick-content">
+                        <strong>Categories</strong>
+                        <span>Add, rename and organize categories</span>
+                    </div>
+                    <div class="quick-arrow">→</div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- CATEGORIES -->
+        <section class="dashboard-section">
+            <div class="section-head">
+                <div class="section-title">
+                    <div class="section-title-icon">
+                        <i class="fa-solid fa-table-cells-large"></i>
+                    </div>
+                    <div>
+                        <h2>Categories</h2>
+                        <p>Organize your products into easy-to-browse groups.</p>
+                    </div>
+                </div>
+
+                <a class="section-link"
+                   href="{{ url_for('admin_categories') }}">
+                    View all categories →
+                </a>
+            </div>
+
+            <div class="category-grid">
+
+                {% for category in categories %}
+                <a class="category-card"
+                   href="{{ url_for('admin_categories') }}">
+
+                    <span class="category-number">
+                        {{ "%02d"|format(loop.index) }}
+                    </span>
+
+                    <div class="category-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+
+                    <h3>{{ category }}</h3>
+                    <p>Manage this category →</p>
+
+                    <span class="category-arrow">→</span>
+                </a>
+
+                {% else %}
+                <div class="empty-state">
+                    No categories have been created yet.
+                </div>
+                {% endfor %}
+
+            </div>
+        </section>
+
+        <!-- ORDER STATUS -->
+        <section class="dashboard-section">
+            <div class="section-head">
+                <div class="section-title">
+                    <div class="section-title-icon">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div>
+                        <h2>Order Status</h2>
+                        <p>Current order pipeline</p>
+                    </div>
+                </div>
+
+                <a class="section-link"
+                   href="{{ url_for('admin_orders') }}">
+                    View orders →
+                </a>
+            </div>
+
+            {% set total_status_orders = (status_counts.values() | sum) or 1 %}
+
+            <div class="status-list">
+
+                {% for status in status_options %}
+                {% set count = status_counts.get(status, 0) %}
+                {% set width = (count / total_status_orders * 100) %}
+
+                <div class="status-row">
+                    <div class="status-name">{{ status }}</div>
+
+                    <div class="status-track">
+                        <div
+                            class="status-fill {% if status == 'Cancelled' %}cancelled{% endif %}"
+                            style="width: {{ width }}%;"
+                        ></div>
+                    </div>
+
+                    <div class="status-count">{{ count }}</div>
+                </div>
+
+                {% endfor %}
+
+            </div>
+        </section>
+
+        <!-- LOWER INFORMATION -->
+        <div class="dashboard-columns">
+
+            <!-- RECENT ORDERS -->
+            <section class="dashboard-section">
+                <div class="section-head">
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                        <div>
+                            <h2>Recent Orders</h2>
+                            <p>Latest customer purchases</p>
+                        </div>
+                    </div>
+
+                    <a class="section-link"
+                       href="{{ url_for('admin_orders') }}">
+                        View all →
+                    </a>
+                </div>
+
+                {% if recent_orders %}
+                <div class="table-wrap">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td>
+                                    <strong>#{{ order.id }}</strong>
+                                </td>
+
+                                <td>
+                                    {{ order.customer_name }}
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        ₦{{ "{:,.0f}".format(order.total|float) }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <span class="status-badge">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                <div class="empty-state">
+                    No orders yet.
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- TOP PRODUCTS -->
+            <section class="dashboard-section">
+                <div class="section-head">
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div>
+                            <h2>Top Products</h2>
+                            <p>Best-performing products</p>
+                        </div>
+                    </div>
+
+                    <a class="section-link"
+                       href="{{ url_for('admin_products') }}">
+                        Manage →
+                    </a>
+                </div>
+
+                <div class="simple-list">
+
+                    {% for product in top_products %}
+                    <div class="list-item">
+                        <div class="list-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+
+                        <div class="list-main">
+                            <strong>{{ product.name }}</strong>
+                            <span>{{ product.sold }} sold</span>
+                        </div>
+
+                        <div class="list-value">
+                            ₦{{ "{:,.0f}".format(product.revenue|float) }}
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="empty-state">
+                        No product sales yet.
+                    </div>
+                    {% endfor %}
+
+                </div>
+            </section>
+
+        </div>
+
+        <!-- LOW STOCK + CUSTOMERS -->
+        <div class="dashboard-columns">
+
+            <section class="dashboard-section">
+                <div class="section-head">
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <div>
+                            <h2>Low Stock Alert</h2>
+                            <p>Products that need attention</p>
+                        </div>
+                    </div>
+
+                    <a class="section-link"
+                       href="{{ url_for('admin_products') }}">
+                        View all →
+                    </a>
+                </div>
+
+                <div class="simple-list">
+                    {% for product in low_stock %}
+                    <div class="list-item">
+                        <div class="list-icon">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+
+                        <div class="list-main">
+                            <strong>{{ product.name }}</strong>
+                            <span>Stock remaining</span>
+                        </div>
+
+                        <div class="list-value">
+                            {{ product.stock }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        No low-stock products.
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="dashboard-section">
+                <div class="section-head">
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <h2>Recent Customers</h2>
+                            <p>Latest customer accounts</p>
+                        </div>
+                    </div>
+
+                    <a class="section-link"
+                       href="{{ url_for('admin_customers') }}">
+                        View all →
+                    </a>
+                </div>
+
+                <div class="simple-list">
+                    {% for customer in recent_customers %}
+                    <div class="list-item">
+                        <div class="list-icon">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+
+                        <div class="list-main">
+                            <strong>{{ customer.name }}</strong>
+                            <span>{{ customer.email }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        No customers yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+        </div>
+
+    </div>
+</section>
 
 {% endblock %}
