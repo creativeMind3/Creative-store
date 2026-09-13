@@ -3446,6 +3446,73 @@ def delete_coupon(coupon_id):
 
 
 # =========================================================
+# SALES REPORTS
+# =========================================================
+
+@app.route("/admin/sales-reports")
+@admin_required
+def admin_sales_reports():
+    """Show sales performance, order summaries and best-selling products."""
+    summary = fetch_one(
+        """
+        SELECT
+            COUNT(*) FILTER (WHERE status != 'Cancelled') AS valid_orders,
+            COALESCE(SUM(total) FILTER (WHERE status != 'Cancelled'), 0) AS total_sales,
+            COUNT(*) FILTER (WHERE status = 'Delivered') AS delivered_orders,
+            COALESCE(SUM(total) FILTER (WHERE status = 'Delivered'), 0) AS delivered_sales,
+            COUNT(*) FILTER (WHERE status = 'Cancelled') AS cancelled_orders,
+            COALESCE(SUM(total) FILTER (WHERE status = 'Cancelled'), 0) AS cancelled_value
+        FROM orders
+        """
+    )
+
+    best_sellers = fetch_all(
+        """
+        SELECT
+            oi.product_name,
+            COALESCE(SUM(oi.quantity), 0) AS units_sold,
+            COALESCE(SUM(oi.quantity * oi.price), 0) AS revenue
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.status != 'Cancelled'
+        GROUP BY oi.product_name
+        ORDER BY units_sold DESC, revenue DESC
+        LIMIT 10
+        """
+    )
+
+    daily_sales = fetch_all(
+        """
+        SELECT
+            DATE(created_at) AS sale_date,
+            COUNT(*) AS orders_count,
+            COALESCE(SUM(total), 0) AS sales
+        FROM orders
+        WHERE status != 'Cancelled'
+        GROUP BY DATE(created_at)
+        ORDER BY sale_date DESC
+        LIMIT 30
+        """
+    )
+
+    status_counts = {}
+    for status in STATUS_OPTIONS:
+        row = fetch_one(
+            "SELECT COUNT(*) c FROM orders WHERE status=?",
+            (status,),
+        )
+        status_counts[status] = row["c"] if row else 0
+
+    return render_template(
+        "admin_sales_reports.html",
+        summary=summary,
+        best_sellers=best_sellers,
+        daily_sales=daily_sales,
+        status_counts=status_counts,
+    )
+
+
+# =========================================================
 # ADMIN ORDERS
 # =========================================================
 
