@@ -26,6 +26,7 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
+
     <link
         rel="preconnect"
         href="https://fonts.gstatic.com"
@@ -221,7 +222,7 @@
             {% endif %}
 
 
-            <!-- CATEGORIES -->
+            <!-- PUBLIC CATEGORIES -->
 
             {% if store.nav_categories == '1' %}
 
@@ -315,38 +316,12 @@
             </a>
 
 
-            <!-- MANAGE PRODUCTS -->
+            <!--
+                Products and Admin Categories have been removed
+                from the sidebar.
 
-            <a
-                class="nav-admin"
-                href="{{ url_for('admin_products') }}"
-                title="Manage Products"
-            >
-
-                <i class="fa-solid fa-box-open"></i>
-
-                <span>
-                    Products
-                </span>
-
-            </a>
-
-
-            <!-- MANAGE CATEGORIES -->
-
-            <a
-                class="nav-admin"
-                href="{{ url_for('admin_categories') }}"
-                title="Manage Categories"
-            >
-
-                <i class="fa-solid fa-layer-group"></i>
-
-                <span>
-                    Categories
-                </span>
-
-            </a>
+                They are now accessed from the Admin Dashboard.
+            -->
 
 
             {% elif admin_exists %}
