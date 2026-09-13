@@ -2,116 +2,653 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{% block title %}{{ store.store_name if store else 'Store' }}{% endblock %}</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-    <meta name="description"
-          content="{{ store.description if store and store.description else 'Shop online with us.' }}">
+    <meta
+        name="theme-color"
+        content="#6d4aff"
+    >
+
+    <meta
+        name="description"
+        content="{{ store.get('store_name', 'Online Store') }} — Shop online with ease."
+    >
+
+    <title>
+        {% block title %}
+            {{ store.get('store_name', 'Online Store') }}
+        {% endblock %}
+    </title>
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
-          rel="stylesheet">
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
     <!-- Font Awesome -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
 
-    <!-- Main CSS -->
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Main stylesheet -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 
     <style>
+
         /* =========================================================
-           ADMIN PANEL
-        ========================================================= */
+           GLOBAL
+           ========================================================= */
 
         :root {
-            --admin-sidebar: #17151f;
-            --admin-sidebar-2: #211e2b;
-            --admin-purple: #7c3aed;
-            --admin-purple-light: #8b5cf6;
-            --admin-bg: #f6f7fb;
-            --admin-card: #ffffff;
-            --admin-text: #171923;
-            --admin-muted: #73778a;
-            --admin-border: #e8e9ef;
-            --admin-danger: #ef4444;
-            --admin-success: #10b981;
+            --primary: #6d4aff;
+            --primary-dark: #5032d8;
+            --primary-light: #f1edff;
+
+            --dark: #171326;
+            --text: #252333;
+            --muted: #777284;
+
+            --white: #ffffff;
+            --bg: #f7f7fb;
+
+            --border: #ebe9f1;
+
+            --success: #16a05d;
+            --danger: #e5484d;
+            --warning: #e99b20;
+
+            --sidebar-width: 260px;
+
+            --shadow:
+                0 12px 35px rgba(25, 18, 55, .07);
         }
 
-        .admin-page {
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
             margin: 0;
             padding: 0;
-            background: var(--admin-bg);
-            color: var(--admin-text);
-            font-family: "DM Sans", sans-serif;
+
+            font-family:
+                "DM Sans",
+                Arial,
+                sans-serif;
+
+            color: var(--text);
+            background: #fff;
+
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
 
-        .admin-layout {
-            min-height: 100vh;
-            display: flex;
-            background: var(--admin-bg);
+        body.admin-page {
+            background: var(--bg);
         }
+
+        a {
+            color: inherit;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        img {
+            max-width: 100%;
+        }
+
 
         /* =========================================================
-           SIDEBAR
-        ========================================================= */
+           IMPERSONATION BAR
+           ========================================================= */
 
-        .admin-sidebar {
-            width: 260px;
-            min-width: 260px;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-
-            display: flex;
-            flex-direction: column;
-
-            background:
-                linear-gradient(
-                    180deg,
-                    var(--admin-sidebar) 0%,
-                    #121119 100%
-                );
-
-            color: #fff;
-            border-right: 1px solid rgba(255,255,255,.05);
-        }
-
-        .admin-brand {
-            min-height: 82px;
-            padding: 18px 20px;
-
-            display: flex;
-            align-items: center;
-            gap: 13px;
-
-            border-bottom: 1px solid rgba(255,255,255,.07);
-        }
-
-        .admin-brand-icon {
-            width: 43px;
-            height: 43px;
-            border-radius: 13px;
+        .impersonation-bar {
+            position: relative;
 
             display: flex;
             align-items: center;
             justify-content: center;
 
-            background: linear-gradient(
-                135deg,
-                var(--admin-purple),
-                var(--admin-purple-light)
-            );
+            gap: 10px;
 
-            box-shadow: 0 8px 20px rgba(124,58,237,.25);
-            font-size: 19px;
+            padding: 10px 16px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #5b3be8,
+                    #7c5cff
+                );
+
+            color: #fff;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            z-index: 9999;
+        }
+
+        .impersonation-bar a {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+
+        /* =========================================================
+           CUSTOMER HEADER
+           ========================================================= */
+
+        .announcement-bar {
+            width: 100%;
+
+            padding: 9px 15px;
+
+            text-align: center;
+
+            background: #171326;
+            color: #fff;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .site-header {
+            position: sticky;
+            top: 0;
+
+            z-index: 1000;
+
+            background: rgba(255, 255, 255, .96);
+
+            border-bottom: 1px solid var(--border);
+
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .header-inner {
+            width: min(1200px, calc(100% - 32px));
+
+            min-height: 76px;
+
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 25px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+
+            gap: 11px;
+
+            text-decoration: none;
+
+            min-width: 0;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+
+            flex: 0 0 44px;
+
+            border-radius: 13px;
+
+            display: grid;
+            place-items: center;
+
+            overflow: hidden;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--primary),
+                    #8b70ff
+                );
+
+            color: #fff;
+
+            font-family:
+                "Plus Jakarta Sans",
+                sans-serif;
+
+            font-size: 20px;
+            font-weight: 800;
+
+            box-shadow:
+                0 8px 18px rgba(109, 74, 255, .20);
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .brand-text {
+            min-width: 0;
+        }
+
+        .brand-name {
+            display: block;
+
+            max-width: 220px;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            color: var(--dark);
+
+            font-family:
+                "Plus Jakarta Sans",
+                sans-serif;
+
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .brand-subtitle {
+            display: block;
+
+            margin-top: 2px;
+
+            color: var(--muted);
+
+            font-size: 10px;
+            font-weight: 700;
+
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+
+        /* =========================================================
+           CUSTOMER NAVIGATION
+           ========================================================= */
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+
+            gap: 5px;
+
+            margin-left: auto;
+        }
+
+        .nav-menu a {
+            display: inline-flex;
+            align-items: center;
+
+            gap: 7px;
+
+            padding: 10px 11px;
+
+            border-radius: 10px;
+
+            color: #5e5a68;
+
+            text-decoration: none;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            transition:
+                background .18s ease,
+                color .18s ease,
+                transform .18s ease;
+        }
+
+        .nav-menu a:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+
+            transform: translateY(-1px);
+        }
+
+        .nav-menu a.active {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .cart-link {
+            position: relative;
+        }
+
+        .cart-badge {
+            min-width: 19px;
+            height: 19px;
+
+            padding: 0 5px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 999px;
+
+            background: var(--primary);
+            color: #fff;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU
+           ========================================================= */
+
+        .mobile-menu-button {
+            width: 43px;
+            height: 43px;
+
+            display: none;
+
+            align-items: center;
+            justify-content: center;
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            background: #fff;
+            color: var(--dark);
+
+            cursor: pointer;
+
+            box-shadow: 0 5px 16px rgba(25, 18, 55, .05);
+        }
+
+        .mobile-menu {
+            display: none;
+
+            padding: 10px 16px 18px;
+
+            background: #fff;
+
+            border-top: 1px solid var(--border);
+        }
+
+        .mobile-menu.open {
+            display: block;
+        }
+
+        .mobile-menu a {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 13px 12px;
+
+            border-radius: 11px;
+
+            text-decoration: none;
+
+            color: #4e4a59;
+
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .mobile-menu a:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+
+        /* =========================================================
+           BUTTONS
+           ========================================================= */
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 8px;
+
+            min-height: 44px;
+
+            padding: 10px 17px;
+
+            border: 0;
+            border-radius: 12px;
+
+            text-decoration: none;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+            transition:
+                transform .18s ease,
+                box-shadow .18s ease,
+                filter .18s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--primary),
+                    #876cff
+                );
+
+            color: #fff;
+
+            box-shadow:
+                0 9px 22px rgba(109, 74, 255, .20);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.04);
+        }
+
+        .btn-secondary {
+            background: #f0edff;
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: #fff0f1;
+            color: var(--danger);
+        }
+
+        .btn-success {
+            background: #eaf9f1;
+            color: var(--success);
+        }
+
+        .btn-sm {
+            min-height: 36px;
+
+            padding: 7px 11px;
+
+            border-radius: 9px;
+
+            font-size: 12px;
+        }
+
+
+        /* =========================================================
+           FLASH MESSAGES
+           ========================================================= */
+
+        .flash-container {
+            width: min(1180px, calc(100% - 32px));
+
+            margin: 18px auto 0;
+
+            position: relative;
+            z-index: 20;
+        }
+
+        .flash {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            margin-bottom: 10px;
+
+            padding: 13px 15px;
+
+            border-radius: 13px;
+
+            border: 1px solid transparent;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .flash.success {
+            background: #ecfbf3;
+            border-color: #ccefdc;
+            color: #157347;
+        }
+
+        .flash.danger,
+        .flash.error {
+            background: #fff0f1;
+            border-color: #f5ced1;
+            color: #b4232a;
+        }
+
+        .flash.warning {
+            background: #fff8e9;
+            border-color: #f6e0a8;
+            color: #8a5a00;
+        }
+
+        .flash.info {
+            background: #eef4ff;
+            border-color: #d6e2ff;
+            color: #315aa8;
+        }
+
+
+        /* =========================================================
+           ADMIN LAYOUT
+           ========================================================= */
+
+        .admin-layout {
+            min-height: 100vh;
+
+            display: flex;
+
+            background: var(--bg);
+        }
+
+        .admin-sidebar {
+            position: fixed;
+
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: var(--sidebar-width);
+
+            z-index: 2000;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 20px 14px;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #171326 0%,
+                    #21183b 100%
+                );
+
+            color: #fff;
+
+            overflow-y: auto;
+
+            box-shadow:
+                8px 0 30px rgba(20, 14, 40, .10);
+        }
+
+        .admin-brand {
+            display: flex;
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 6px 9px 22px;
+
+            text-decoration: none;
+
+            border-bottom:
+                1px solid rgba(255,255,255,.08);
+
+            margin-bottom: 20px;
+        }
+
+        .admin-brand-icon {
+            width: 43px;
+            height: 43px;
+
+            flex: 0 0 43px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 12px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--primary),
+                    #9178ff
+                );
+
+            color: #fff;
+
+            font-size: 18px;
+            font-weight: 800;
         }
 
         .admin-brand-text {
@@ -120,161 +657,233 @@
 
         .admin-brand-name {
             display: block;
-            font-family: "Plus Jakarta Sans", sans-serif;
-            font-size: 15px;
-            font-weight: 800;
-            white-space: nowrap;
+
+            max-width: 170px;
+
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
+
+            color: #fff;
+
+            font-family:
+                "Plus Jakarta Sans",
+                sans-serif;
+
+            font-size: 14px;
+            font-weight: 800;
         }
 
         .admin-brand-label {
             display: block;
-            margin-top: 2px;
-            color: #a5a2b1;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 1.2px;
-        }
 
-        /* =========================================================
-           SIDEBAR NAV
-        ========================================================= */
+            margin-top: 3px;
 
-        .admin-sidebar-nav {
-            flex: 1;
-            overflow-y: auto;
-            padding: 22px 13px;
-        }
+            color: rgba(255,255,255,.50);
 
-        .admin-nav-section {
-            margin: 0 10px 9px;
-            color: #777486;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
-            letter-spacing: 1.2px;
+
+            letter-spacing: .13em;
         }
 
-        .admin-nav-link {
+        .admin-section-title {
+            padding: 0 11px;
+
+            margin:
+                17px 0 7px;
+
+            color:
+                rgba(255,255,255,.35);
+
+            font-size: 9px;
+            font-weight: 800;
+
+            letter-spacing: .14em;
+
+            text-transform: uppercase;
+        }
+
+        .admin-nav {
+            display: grid;
+
+            gap: 4px;
+        }
+
+        .admin-nav a {
             position: relative;
 
             display: flex;
             align-items: center;
-            gap: 12px;
 
-            min-height: 45px;
-            margin-bottom: 4px;
-            padding: 0 13px;
+            gap: 11px;
 
-            color: #b9b6c4;
-            text-decoration: none;
+            min-height: 43px;
+
+            padding: 10px 12px;
 
             border-radius: 11px;
 
+            color:
+                rgba(255,255,255,.70);
+
+            text-decoration: none;
+
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
 
             transition:
-                background .2s ease,
-                color .2s ease,
-                transform .2s ease;
+                background .18s ease,
+                color .18s ease,
+                transform .18s ease;
         }
 
-        .admin-nav-link i {
-            width: 20px;
+        .admin-nav a i {
+            width: 18px;
+
             text-align: center;
-            font-size: 15px;
+
+            font-size: 14px;
         }
 
-        .admin-nav-link:hover {
+        .admin-nav a:hover {
+            background:
+                rgba(255,255,255,.07);
+
             color: #fff;
-            background: rgba(255,255,255,.06);
+
             transform: translateX(2px);
         }
 
-        .admin-nav-link.active {
-            color: #fff;
+        .admin-nav a.active {
             background:
                 linear-gradient(
                     90deg,
-                    rgba(124,58,237,.95),
-                    rgba(139,92,246,.75)
+                    rgba(109,74,255,.30),
+                    rgba(109,74,255,.12)
                 );
-            box-shadow: 0 8px 22px rgba(124,58,237,.18);
+
+            color: #fff;
+        }
+
+        .admin-nav a.active::before {
+            content: "";
+
+            position: absolute;
+
+            left: 0;
+            top: 9px;
+            bottom: 9px;
+
+            width: 3px;
+
+            border-radius: 999px;
+
+            background: #a28cff;
         }
 
         .admin-nav-badge {
             margin-left: auto;
-            min-width: 21px;
-            height: 21px;
-            padding: 0 6px;
+
+            min-width: 20px;
+            height: 20px;
 
             display: inline-flex;
             align-items: center;
             justify-content: center;
 
-            border-radius: 50px;
+            padding: 0 6px;
 
-            background: var(--admin-danger);
-            color: white;
+            border-radius: 999px;
 
-            font-size: 10px;
+            background: #ff5261;
+            color: #fff;
+
+            font-size: 9px;
             font-weight: 800;
         }
 
-        /* =========================================================
-           SIDEBAR FOOTER
-        ========================================================= */
-
         .admin-sidebar-footer {
-            padding: 13px;
-            border-top: 1px solid rgba(255,255,255,.07);
+            margin-top: auto;
+
+            padding-top: 15px;
+
+            border-top:
+                1px solid rgba(255,255,255,.08);
         }
 
         .admin-sidebar-footer a {
-            color: #aaa7b5;
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 11px 12px;
+
+            border-radius: 10px;
+
+            color:
+                rgba(255,255,255,.62);
+
+            text-decoration: none;
+
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .admin-sidebar-footer a:hover {
+            background:
+                rgba(255,255,255,.07);
+
             color: #fff;
         }
 
-        /* =========================================================
-           MAIN ADMIN AREA
-        ========================================================= */
-
         .admin-main {
-            width: calc(100% - 260px);
-            min-width: 0;
-            margin-left: 260px;
+            width: calc(100% - var(--sidebar-width));
+
+            margin-left: var(--sidebar-width);
+
             min-height: 100vh;
+
+            display: flex;
+            flex-direction: column;
         }
+
 
         /* =========================================================
            ADMIN TOPBAR
-        ========================================================= */
+           ========================================================= */
 
         .admin-topbar {
-            height: 74px;
-            padding: 0 28px;
+            position: sticky;
+            top: 0;
+
+            z-index: 1000;
+
+            min-height: 70px;
 
             display: flex;
             align-items: center;
             justify-content: space-between;
 
-            background: #fff;
-            border-bottom: 1px solid var(--admin-border);
+            gap: 20px;
 
-            position: sticky;
-            top: 0;
-            z-index: 900;
+            padding: 0 25px;
+
+            background:
+                rgba(255,255,255,.95);
+
+            border-bottom:
+                1px solid var(--border);
+
+            backdrop-filter: blur(15px);
         }
 
         .admin-topbar-left {
             display: flex;
             align-items: center;
-            gap: 15px;
-            min-width: 0;
+
+            gap: 12px;
         }
 
         .admin-mobile-toggle {
@@ -282,618 +891,546 @@
             height: 40px;
 
             display: none;
+
             align-items: center;
             justify-content: center;
 
-            border: 1px solid var(--admin-border);
+            border: 1px solid var(--border);
             border-radius: 10px;
+
             background: #fff;
-            color: var(--admin-text);
+
+            color: var(--dark);
 
             cursor: pointer;
         }
 
-        .admin-topbar-title {
-            font-family: "Plus Jakarta Sans", sans-serif;
-            font-size: 17px;
-            font-weight: 800;
-        }
+        .admin-page-heading {
+            font-family:
+                "Plus Jakarta Sans",
+                sans-serif;
 
-        .admin-topbar-subtitle {
-            color: var(--admin-muted);
-            font-size: 12px;
-            margin-top: 2px;
+            font-size: 16px;
+            font-weight: 800;
+
+            color: var(--dark);
         }
 
         .admin-topbar-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+
+            gap: 9px;
         }
 
-        .admin-topbar-icon {
-            width: 40px;
-            height: 40px;
+        .admin-topbar-link {
+            width: 39px;
+            height: 39px;
 
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
 
-            border: 1px solid var(--admin-border);
-            border-radius: 11px;
+            border-radius: 10px;
 
-            background: #fff;
-            color: #666a7a;
+            color: #6c6876;
 
             text-decoration: none;
-            transition: .2s ease;
+
+            transition:
+                background .18s ease,
+                color .18s ease;
         }
 
-        .admin-topbar-icon:hover {
-            color: var(--admin-purple);
-            border-color: rgba(124,58,237,.3);
-            background: #faf8ff;
+        .admin-topbar-link:hover {
+            background: var(--primary-light);
+            color: var(--primary);
         }
 
-        .admin-profile-mini {
+        .admin-user {
             display: flex;
             align-items: center;
-            gap: 10px;
 
-            margin-left: 4px;
-            padding-left: 12px;
+            gap: 9px;
 
-            border-left: 1px solid var(--admin-border);
+            padding-left: 8px;
         }
 
-        .admin-profile-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
+        .admin-user-avatar {
+            width: 36px;
+            height: 36px;
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: grid;
+            place-items: center;
 
-            background: #ede9fe;
-            color: var(--admin-purple);
+            border-radius: 10px;
 
-            font-weight: 800;
+            background: var(--primary-light);
+            color: var(--primary);
+
             font-size: 13px;
+            font-weight: 800;
         }
 
-        .admin-profile-name {
+        .admin-user-info strong {
+            display: block;
+
+            color: var(--dark);
+
             font-size: 12px;
             font-weight: 800;
         }
 
-        .admin-profile-role {
+        .admin-user-info span {
+            display: block;
+
             margin-top: 1px;
-            color: var(--admin-muted);
+
+            color: #918d99;
+
             font-size: 10px;
         }
 
+
         /* =========================================================
            ADMIN CONTENT
-        ========================================================= */
+           ========================================================= */
 
         .admin-content {
+            flex: 1;
+
             width: 100%;
-            max-width: 1500px;
-            margin: 0 auto;
-            padding: 28px;
-            box-sizing: border-box;
+
+            padding:
+                26px;
         }
 
-        .admin-flashes {
-            margin-bottom: 20px;
-        }
-
-        .admin-content .flash {
-            margin-bottom: 10px;
-        }
 
         /* =========================================================
-           MOBILE SIDEBAR
-        ========================================================= */
+           MOBILE SIDEBAR OVERLAY
+           ========================================================= */
 
         .admin-overlay {
-            display: none;
             position: fixed;
+
             inset: 0;
-            z-index: 950;
-            background: rgba(0,0,0,.5);
+
+            z-index: 1900;
+
+            display: none;
+
+            background:
+                rgba(14,10,25,.55);
         }
+
+        .admin-overlay.show {
+            display: block;
+        }
+
 
         /* =========================================================
-           ADMIN RESPONSIVE
-        ========================================================= */
+           GENERAL ADMIN HELPERS
+           ========================================================= */
 
-        @media (max-width: 1000px) {
-
-            .admin-sidebar {
-                transform: translateX(-100%);
-                transition: transform .25s ease;
-            }
-
-            .admin-sidebar.open {
-                transform: translateX(0);
-            }
-
-            .admin-sidebar.open + .admin-overlay {
-                display: block;
-            }
-
-            .admin-main {
-                width: 100%;
-                margin-left: 0;
-            }
-
-            .admin-mobile-toggle {
-                display: flex;
-            }
-        }
-
-        @media (max-width: 650px) {
-
-            .admin-topbar {
-                height: 65px;
-                padding: 0 14px;
-            }
-
-            .admin-topbar-title {
-                font-size: 14px;
-            }
-
-            .admin-topbar-subtitle {
-                display: none;
-            }
-
-            .admin-topbar-right .admin-topbar-icon {
-                display: none;
-            }
-
-            .admin-profile-name,
-            .admin-profile-role {
-                display: none;
-            }
-
-            .admin-profile-mini {
-                padding-left: 7px;
-            }
-
-            .admin-content {
-                padding: 18px 14px;
-            }
-        }
-
-        /* =========================================================
-           GENERAL FLASH MESSAGES
-        ========================================================= */
-
-        .flash {
-            padding: 13px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            line-height: 1.5;
-            border: 1px solid transparent;
-        }
-
-        .flash.success {
-            background: #ecfdf5;
-            border-color: #bbf7d0;
-            color: #047857;
-        }
-
-        .flash.danger,
-        .flash.error {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #b91c1c;
-        }
-
-        .flash.warning {
-            background: #fffbeb;
-            border-color: #fde68a;
-            color: #92400e;
-        }
-
-        .flash.info {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1d4ed8;
-        }
-
-        /* =========================================================
-           IMPERSONATION BAR
-        ========================================================= */
-
-        .impersonation-bar {
-            width: 100%;
-            padding: 9px 15px;
-            box-sizing: border-box;
-
-            background: #111827;
-            color: #fff;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .impersonation-bar a {
-            color: #fff;
-            font-weight: 800;
-            text-decoration: underline;
-        }
-
-        /* =========================================================
-           CUSTOMER HEADER
-        ========================================================= */
-
-        .site-header {
-            position: sticky;
-            top: 0;
-            z-index: 800;
-
+        .admin-card {
             background: #fff;
-            border-bottom: 1px solid #eee;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 18px;
+
+            box-shadow:
+                0 8px 25px rgba(25,18,55,.05);
         }
 
-        .announcement-bar {
-            padding: 8px 15px;
-            text-align: center;
-            background: #17151f;
-            color: #fff;
-            font-size: 12px;
-        }
-
-        .site-header-inner {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 15px 20px;
-
+        .admin-card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
+
+            gap: 15px;
+
+            padding: 18px 20px;
+
+            border-bottom:
+                1px solid var(--border);
         }
 
-        .site-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .admin-card-header h2,
+        .admin-card-header h3 {
+            margin: 0;
 
-            color: inherit;
-            text-decoration: none;
-        }
+            color: var(--dark);
 
-        .site-logo-mark {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            background: #7c3aed;
-            color: #fff;
-
-            font-family: "Plus Jakarta Sans", sans-serif;
             font-size: 17px;
             font-weight: 800;
         }
 
-        .site-logo-name {
-            font-family: "Plus Jakarta Sans", sans-serif;
-            font-size: 16px;
+        .admin-card-body {
+            padding: 20px;
+        }
+
+        .admin-table-wrap {
+            width: 100%;
+
+            overflow-x: auto;
+        }
+
+        .admin-table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 650px;
+        }
+
+        .admin-table th {
+            padding: 13px 14px;
+
+            background: #faf9fc;
+
+            color: #85808f;
+
+            text-align: left;
+
+            font-size: 11px;
             font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: .05em;
         }
 
-        .site-nav {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .admin-table td {
+            padding: 14px;
 
-        .site-nav a {
-            padding: 9px 11px;
-            border-radius: 9px;
+            border-top:
+                1px solid #f0eef4;
 
-            color: #555867;
-            text-decoration: none;
+            color: #45414e;
 
             font-size: 13px;
-            font-weight: 600;
-
-            transition: .2s ease;
         }
 
-        .site-nav a:hover {
-            color: #7c3aed;
-            background: #faf7ff;
+        .admin-table tr:hover td {
+            background: #fcfbff;
         }
 
-        .site-nav .cart-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .cart-count {
-            min-width: 18px;
-            height: 18px;
-            padding: 0 5px;
-
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-
-            background: #7c3aed;
-            color: #fff;
-
-            border-radius: 50px;
-            font-size: 9px;
-            font-weight: 800;
-        }
-
-        @media (max-width: 850px) {
-
-            .site-nav {
-                display: none;
-            }
-
-            .site-header-inner {
-                padding: 12px 15px;
-            }
-        }
 
         /* =========================================================
            FOOTER
-        ========================================================= */
+           ========================================================= */
 
         .site-footer {
-            margin-top: 60px;
-            padding: 45px 20px 25px;
-            background: #17151f;
+            margin-top: 40px;
+
+            background: #171326;
             color: #fff;
         }
 
-        .site-footer-inner {
-            max-width: 1200px;
-            margin: 0 auto;
+        .footer-inner {
+            width: min(1180px, calc(100% - 32px));
+
+            margin: auto;
+
+            padding: 45px 0 25px;
         }
 
-        .site-footer a {
-            color: #c9c6d1;
+        .footer-grid {
+            display: grid;
+
+            grid-template-columns:
+                1.4fr
+                1fr
+                1fr
+                1fr;
+
+            gap: 30px;
+        }
+
+        .footer-brand {
+            max-width: 330px;
+        }
+
+        .footer-brand h3 {
+            margin: 0 0 10px;
+
+            color: #fff;
+
+            font-family:
+                "Plus Jakarta Sans",
+                sans-serif;
+
+            font-size: 18px;
+        }
+
+        .footer-brand p {
+            margin: 0;
+
+            color:
+                rgba(255,255,255,.58);
+
+            font-size: 13px;
+
+            line-height: 1.7;
+        }
+
+        .footer-col h4 {
+            margin: 0 0 13px;
+
+            color: #fff;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .footer-col a {
+            display: block;
+
+            margin-bottom: 9px;
+
+            color:
+                rgba(255,255,255,.57);
+
             text-decoration: none;
+
+            font-size: 12px;
         }
 
-        .site-footer a:hover {
+        .footer-col a:hover {
             color: #fff;
         }
+
+        .footer-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+
+            margin-top: 35px;
+
+            padding-top: 18px;
+
+            border-top:
+                1px solid rgba(255,255,255,.09);
+
+            color:
+                rgba(255,255,255,.45);
+
+            font-size: 11px;
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 1050px) {
+
+            .nav-menu {
+                display: none;
+            }
+
+            .mobile-menu-button {
+                display: inline-flex;
+            }
+
+            .header-inner {
+                min-height: 68px;
+            }
+
+            .footer-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+        }
+
+
+        @media (max-width: 900px) {
+
+            :root {
+                --sidebar-width: 260px;
+            }
+
+            .admin-sidebar {
+                transform:
+                    translateX(-105%);
+
+                transition:
+                    transform .25s ease;
+
+                box-shadow:
+                    15px 0 40px rgba(20,14,40,.20);
+            }
+
+            .admin-sidebar.open {
+                transform:
+                    translateX(0);
+            }
+
+            .admin-main {
+                width: 100%;
+
+                margin-left: 0;
+            }
+
+            .admin-mobile-toggle {
+                display: inline-flex;
+            }
+
+            .admin-content {
+                padding: 20px 16px;
+            }
+
+            .admin-topbar {
+                padding:
+                    0 16px;
+            }
+        }
+
+
+        @media (max-width: 650px) {
+
+            .header-inner {
+                width:
+                    calc(100% - 22px);
+            }
+
+            .brand-name {
+                max-width: 150px;
+            }
+
+            .brand-subtitle {
+                display: none;
+            }
+
+            .brand-logo {
+                width: 40px;
+                height: 40px;
+
+                flex-basis: 40px;
+            }
+
+            .flash-container {
+                width:
+                    calc(100% - 22px);
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+
+                align-items: flex-start;
+            }
+
+            .admin-user-info {
+                display: none;
+            }
+
+            .admin-topbar-right {
+                gap: 2px;
+            }
+        }
+
+
+        @media (max-width: 480px) {
+
+            .admin-content {
+                padding:
+                    16px 11px;
+            }
+
+            .admin-topbar {
+                min-height: 62px;
+
+                padding:
+                    0 11px;
+            }
+
+            .admin-page-heading {
+                font-size: 14px;
+            }
+
+            .admin-user-avatar {
+                width: 33px;
+                height: 33px;
+            }
+
+            .footer-inner {
+                width:
+                    calc(100% - 22px);
+            }
+        }
+
+
+        /* =========================================================
+           ACCESSIBILITY
+           ========================================================= */
+
+        :focus-visible {
+            outline:
+                3px solid rgba(109,74,255,.25);
+
+            outline-offset: 2px;
+        }
+
     </style>
 
     {% block head %}{% endblock %}
 </head>
 
+
 <body
     class="{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}admin-page{% endif %}"
 >
 
-{% set is_admin_page =
-    g.user
-    and g.user['is_admin']
-    and request.path.startswith('/admin')
-%}
 
-
-<!-- =========================================================
-     IMPERSONATION BAR
-========================================================= -->
+<!-- =============================================================
+     IMPERSONATION NOTICE
+     ============================================================= -->
 
 {% if is_impersonating %}
 
 <div class="impersonation-bar">
-    <i class="fa-solid fa-user-shield"></i>
+
+    <i class="fa-solid fa-user-secret"></i>
 
     <span>
         You are currently viewing the store as a customer.
     </span>
 
-    <a href="{{ url_for('admin_stop_impersonating') }}">
-        Return to Admin
-    </a>
+    {% if g.user and g.user['is_admin'] %}
+
+        <a href="{{ url_for('admin_dashboard') }}">
+            Return to Admin
+        </a>
+
+    {% endif %}
+
 </div>
 
 {% endif %}
 
 
-<!-- =========================================================
-     ADMIN LAYOUT
-========================================================= -->
+<!-- =============================================================
+     ADMIN / CUSTOMER LAYOUT SWITCH
+     ============================================================= -->
 
-{% if is_admin_page %}
+{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
+
+
+<!-- =============================================================
+     ADMIN LAYOUT
+     ============================================================= -->
 
 <div class="admin-layout">
-
-    <!-- SIDEBAR -->
-
-    <aside class="admin-sidebar" id="adminSidebar">
-
-        <div class="admin-brand">
-
-            <div class="admin-brand-icon">
-                <i class="fa-solid fa-bag-shopping"></i>
-            </div>
-
-            <div class="admin-brand-text">
-
-                <span class="admin-brand-name">
-                    {{ store.store_name if store and store.store_name else 'Store' }}
-                </span>
-
-                <span class="admin-brand-label">
-                    ADMIN PANEL
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <nav class="admin-sidebar-nav">
-
-            <div class="admin-nav-section">
-                MAIN
-            </div>
-
-            <a
-                href="{{ url_for('admin_dashboard') }}"
-                class="admin-nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
-            >
-                <i class="fa-solid fa-grid-2"></i>
-                <span>Dashboard</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_orders') }}"
-                class="admin-nav-link {% if request.endpoint in ['admin_orders', 'admin_order_details'] %}active{% endif %}"
-            >
-                <i class="fa-solid fa-receipt"></i>
-                <span>Orders</span>
-
-                {% if status_counts is defined and status_counts.get('Pending', 0) %}
-                    <span class="admin-nav-badge">
-                        {{ status_counts.get('Pending', 0) }}
-                    </span>
-                {% endif %}
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_products') }}"
-                class="admin-nav-link {% if request.endpoint in ['admin_products', 'add_product', 'edit_product'] %}active{% endif %}"
-            >
-                <i class="fa-solid fa-box"></i>
-                <span>Products</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_customers') }}"
-                class="admin-nav-link {% if request.endpoint == 'admin_customers' %}active{% endif %}"
-            >
-                <i class="fa-solid fa-users"></i>
-                <span>Customers</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_categories') }}"
-                class="admin-nav-link {% if request.endpoint in ['admin_categories', 'edit_category'] %}active{% endif %}"
-            >
-                <i class="fa-solid fa-layer-group"></i>
-                <span>Categories</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_coupons') }}"
-                class="admin-nav-link {% if request.endpoint in ['admin_coupons', 'admin_coupon_toggle', 'admin_coupon_delete'] %}active{% endif %}"
-            >
-                <i class="fa-solid fa-ticket"></i>
-                <span>Coupons</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_sales_reports') }}"
-                class="admin-nav-link {% if request.endpoint == 'admin_sales_reports' %}active{% endif %}"
-            >
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Sales Reports</span>
-            </a>
-
-
-            <div class="admin-nav-section" style="margin-top:24px;">
-                STORE
-            </div>
-
-
-            <a
-                href="{{ url_for('index') }}"
-                class="admin-nav-link"
-                target="_blank"
-            >
-                <i class="fa-solid fa-store"></i>
-                <span>View Store</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_settings') }}"
-                class="admin-nav-link {% if request.endpoint == 'admin_settings' %}active{% endif %}"
-            >
-                <i class="fa-solid fa-gear"></i>
-                <span>Store Settings</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('admin_profile') }}"
-                class="admin-nav-link {% if request.endpoint == 'admin_profile' %}active{% endif %}"
-            >
-                <i class="fa-solid fa-user-shield"></i>
-                <span>Admin Profile</span>
-            </a>
-
-
-            <div class="admin-nav-section" style="margin-top:24px;">
-                SYSTEM
-            </div>
-
-
-            <a
-                href="{{ url_for('admin_categories') }}"
-                class="admin-nav-link"
-            >
-                <i class="fa-solid fa-sliders"></i>
-                <span>Manage Categories</span>
-            </a>
-
-        </nav>
-
-
-        <div class="admin-sidebar-footer">
-
-            <a
-                href="{{ url_for('index') }}"
-                target="_blank"
-                class="admin-nav-link"
-            >
-                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                <span>Open Store</span>
-            </a>
-
-
-            <a
-                href="{{ url_for('logout') }}"
-                class="admin-nav-link"
-            >
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Logout</span>
-            </a>
-
-        </div>
-
-    </aside>
 
 
     <!-- MOBILE OVERLAY -->
@@ -905,9 +1442,233 @@
     ></div>
 
 
-    <!-- MAIN ADMIN AREA -->
+    <!-- =========================================================
+         ADMIN SIDEBAR
+         ========================================================= -->
+
+    <aside
+        class="admin-sidebar"
+        id="adminSidebar"
+    >
+
+        <a
+            href="{{ url_for('admin_dashboard') }}"
+            class="admin-brand"
+        >
+
+            <div class="admin-brand-icon">
+
+                {% set logo = store.get('logo', '') %}
+
+                {% if logo %}
+
+                    <img
+                        src="{{ url_for('static', filename='uploads/' ~ logo) }}"
+                        alt="Store logo"
+                    >
+
+                {% else %}
+
+                    {{ store.get('store_name', 'S')[:1]|upper }}
+
+                {% endif %}
+
+            </div>
+
+            <div class="admin-brand-text">
+
+                <span class="admin-brand-name">
+                    {{ store.get('store_name', 'Online Store') }}
+                </span>
+
+                <span class="admin-brand-label">
+                    ADMIN PANEL
+                </span>
+
+            </div>
+
+        </a>
+
+
+        <!-- MAIN -->
+
+        <div class="admin-section-title">
+            Main
+        </div>
+
+        <nav class="admin-nav">
+
+            <a
+                href="{{ url_for('admin_dashboard') }}"
+                class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-grid-2"></i>
+
+                <span>Dashboard</span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_orders') }}"
+                class="{% if request.endpoint in ['admin_orders', 'admin_order_details'] %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-cart-shopping"></i>
+
+                <span>Orders</span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_customers') }}"
+                class="{% if request.endpoint == 'admin_customers' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-users"></i>
+
+                <span>Customers</span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_coupons') }}"
+                class="{% if request.endpoint in ['admin_coupons', 'admin_toggle_coupon', 'admin_delete_coupon'] %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-ticket"></i>
+
+                <span>Coupons</span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_sales_reports') }}"
+                class="{% if request.endpoint == 'admin_sales_reports' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-chart-column"></i>
+
+                <span>Sales Reports</span>
+
+            </a>
+
+        </nav>
+
+
+        <!-- STORE -->
+
+        <div class="admin-section-title">
+            Store
+        </div>
+
+        <nav class="admin-nav">
+
+            <a
+                href="{{ url_for('admin_products') }}"
+                class="{% if request.endpoint == 'admin_products' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-box"></i>
+
+                <span>Products</span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_categories') }}"
+                class="{% if request.endpoint == 'admin_categories' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-layer-group"></i>
+
+                <span>Categories</span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('admin_settings') }}"
+                class="{% if request.endpoint == 'admin_settings' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-gear"></i>
+
+                <span>Store Settings</span>
+
+            </a>
+
+        </nav>
+
+
+        <!-- ACCOUNT -->
+
+        <div class="admin-section-title">
+            Account
+        </div>
+
+        <nav class="admin-nav">
+
+            <a
+                href="{{ url_for('admin_profile') }}"
+                class="{% if request.endpoint == 'admin_profile' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-user"></i>
+
+                <span>My Profile</span>
+
+            </a>
+
+        </nav>
+
+
+        <!-- SIDEBAR FOOTER -->
+
+        <div class="admin-sidebar-footer">
+
+            <a
+                href="{{ url_for('index') }}"
+                target="_blank"
+            >
+
+                <i class="fa-solid fa-store"></i>
+
+                <span>
+                    Open Store
+                </span>
+
+            </a>
+
+
+            <a
+                href="{{ url_for('logout') }}"
+            >
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                <span>
+                    Logout
+                </span>
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================================================
+         ADMIN MAIN
+         ========================================================= -->
 
     <div class="admin-main">
+
 
         <!-- TOPBAR -->
 
@@ -919,23 +1680,19 @@
                     type="button"
                     class="admin-mobile-toggle"
                     onclick="toggleAdminSidebar()"
-                    aria-label="Open menu"
+                    aria-label="Open admin menu"
                 >
+
                     <i class="fa-solid fa-bars"></i>
+
                 </button>
 
 
-                <div>
+                <div class="admin-page-heading">
 
-                    <div class="admin-topbar-title">
-                        {% block admin_page_title %}
-                            {{ store.store_name if store and store.store_name else 'Store' }}
-                        {% endblock %}
-                    </div>
-
-                    <div class="admin-topbar-subtitle">
-                        Manage your online store
-                    </div>
+                    {% block admin_page_title %}
+                        Admin Dashboard
+                    {% endblock %}
 
                 </div>
 
@@ -946,44 +1703,63 @@
 
                 <a
                     href="{{ url_for('index') }}"
-                    target="_blank"
-                    class="admin-topbar-icon"
+                    class="admin-topbar-link"
                     title="View Store"
+                    target="_blank"
                 >
+
                     <i class="fa-solid fa-store"></i>
+
                 </a>
 
 
                 <a
-                    href="{{ url_for('admin_orders') }}"
-                    class="admin-topbar-icon"
-                    title="Orders"
+                    href="{{ url_for('admin_profile') }}"
+                    class="admin-topbar-link"
+                    title="Profile"
                 >
-                    <i class="fa-solid fa-bell"></i>
+
+                    <i class="fa-solid fa-user"></i>
+
                 </a>
 
 
-                <div class="admin-profile-mini">
+                <div class="admin-user">
 
-                    <div class="admin-profile-avatar">
-                        {{
-                            (
-                                g.user['name'][0]
-                                if g.user and g.user['name']
-                                else 'A'
-                            ) | upper
-                        }}
+                    <div class="admin-user-avatar">
+
+                        {% if g.user and g.user['name'] %}
+
+                            {{ g.user['name'][:1]|upper }}
+
+                        {% else %}
+
+                            A
+
+                        {% endif %}
+
                     </div>
 
-                    <div>
 
-                        <div class="admin-profile-name">
-                            {{ g.user['name'] if g.user else 'Administrator' }}
-                        </div>
+                    <div class="admin-user-info">
 
-                        <div class="admin-profile-role">
+                        <strong>
+
+                            {% if g.user %}
+
+                                {{ g.user['name'] }}
+
+                            {% else %}
+
+                                Administrator
+
+                            {% endif %}
+
+                        </strong>
+
+                        <span>
                             Administrator
-                        </div>
+                        </span>
 
                     </div>
 
@@ -995,107 +1771,192 @@
 
 
         <!-- =====================================================
-             ADMIN CONTENT
-        ====================================================== -->
+             ADMIN CONTENT MAIN
+             ===================================================== -->
 
         <main class="admin-content">
 
+
 {% else %}
 
-<!-- =========================================================
-     CUSTOMER HEADER
-========================================================= -->
 
-{% if store and store.announcement %}
+<!-- =============================================================
+     CUSTOMER WEBSITE
+     ============================================================= -->
+
+
+<!-- ANNOUNCEMENT -->
+
 <div class="announcement-bar">
-    {{ store.announcement }}
-</div>
-{% endif %}
 
+    <i class="fa-solid fa-bolt"></i>
+
+    Shop online anytime — simple, fast and secure.
+
+</div>
+
+
+<!-- HEADER -->
 
 <header class="site-header">
 
-    <div class="site-header-inner">
+    <div class="header-inner">
+
+
+        <!-- BRAND -->
 
         <a
             href="{{ url_for('index') }}"
-            class="site-logo"
+            class="brand"
         >
 
-            <div class="site-logo-mark">
-                {{
-                    (
-                        store.store_name[0]
-                        if store
-                        and store.store_name
-                        else 'S'
-                    ) | upper
-                }}
+            <div class="brand-logo">
+
+                {% set logo = store.get('logo', '') %}
+
+                {% if logo %}
+
+                    <img
+                        src="{{ url_for('static', filename='uploads/' ~ logo) }}"
+                        alt="{{ store.get('store_name', 'Store') }}"
+                    >
+
+                {% else %}
+
+                    {{ store.get('store_name', 'S')[:1]|upper }}
+
+                {% endif %}
+
             </div>
 
-            <span class="site-logo-name">
-                {{ store.store_name if store and store.store_name else 'Store' }}
-            </span>
+
+            <div class="brand-text">
+
+                <span class="brand-name">
+                    {{ store.get('store_name', 'Online Store') }}
+                </span>
+
+                <span class="brand-subtitle">
+                    Shop online
+                </span>
+
+            </div>
 
         </a>
 
 
-        <nav class="site-nav">
+        <!-- DESKTOP NAV -->
 
-            <a href="{{ url_for('index') }}">
+        <nav class="nav-menu">
+
+            <a
+                href="{{ url_for('index') }}"
+                class="{% if request.endpoint == 'index' %}active{% endif %}"
+            >
+
                 <i class="fa-solid fa-house"></i>
+
                 Home
+
             </a>
 
 
-            <a href="{{ url_for('shop') }}">
-                <i class="fa-solid fa-store"></i>
+            {% if 'products' in current_app.view_functions %}
+
+            <a
+                href="{{ url_for('products') }}"
+                class="{% if request.endpoint == 'products' %}active{% endif %}"
+            >
+
+                <i class="fa-solid fa-shop"></i>
+
                 Shop
+
             </a>
 
+            {% endif %}
 
-            <a href="{{ url_for('categories') }}">
+
+            {% if 'categories' in current_app.view_functions %}
+
+            <a
+                href="{{ url_for('categories') }}"
+                class="{% if request.endpoint == 'categories' %}active{% endif %}"
+            >
+
                 <i class="fa-solid fa-layer-group"></i>
+
                 Categories
+
             </a>
 
+            {% endif %}
 
-            {% if store and store.get('nav_about', '1') == '1' %}
-            <a href="{{ url_for('about') }}">
+
+            {% if 'about' in current_app.view_functions %}
+
+            <a
+                href="{{ url_for('about') }}"
+            >
+
                 <i class="fa-solid fa-circle-info"></i>
+
                 About
+
             </a>
+
             {% endif %}
 
 
-            {% if store and store.get('nav_contact', '1') == '1' %}
-            <a href="{{ url_for('contact') }}">
+            {% if 'contact' in current_app.view_functions %}
+
+            <a
+                href="{{ url_for('contact') }}"
+            >
+
                 <i class="fa-solid fa-envelope"></i>
+
                 Contact
+
             </a>
+
             {% endif %}
 
+
+            {% if 'cart' in current_app.view_functions %}
 
             <a
                 href="{{ url_for('cart') }}"
                 class="cart-link"
             >
+
                 <i class="fa-solid fa-cart-shopping"></i>
+
                 Cart
 
-                {% if cart_count %}
-                    <span class="cart-count">
+                {% if cart_count > 0 %}
+
+                    <span class="cart-badge">
                         {{ cart_count }}
                     </span>
+
                 {% endif %}
+
             </a>
+
+            {% endif %}
 
 
             {% if g.user and g.user['is_admin'] %}
 
-            <a href="{{ url_for('admin_dashboard') }}">
+            <a
+                href="{{ url_for('admin_dashboard') }}"
+            >
+
                 <i class="fa-solid fa-gauge-high"></i>
+
                 Admin
+
             </a>
 
             {% endif %}
@@ -1103,26 +1964,182 @@
 
             {% if g.user %}
 
-            <a href="{{ url_for('logout') }}">
+            <a
+                href="{{ url_for('logout') }}"
+            >
+
                 <i class="fa-solid fa-right-from-bracket"></i>
+
                 Logout
+
             </a>
 
             {% else %}
 
-            <a href="{{ url_for('login') }}">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                Login
-            </a>
+            {% if 'login' in current_app.view_functions %}
 
-            <a href="{{ url_for('register') }}">
-                <i class="fa-solid fa-user-plus"></i>
-                Register
+            <a
+                href="{{ url_for('login') }}"
+            >
+
+                <i class="fa-solid fa-right-to-bracket"></i>
+
+                Login
+
             </a>
 
             {% endif %}
 
+            {% endif %}
+
         </nav>
+
+
+        <!-- MOBILE MENU BUTTON -->
+
+        <button
+            type="button"
+            class="mobile-menu-button"
+            onclick="toggleMobileMenu()"
+            aria-label="Open menu"
+            aria-expanded="false"
+            id="mobileMenuButton"
+        >
+
+            <i class="fa-solid fa-bars"></i>
+
+        </button>
+
+    </div>
+
+
+    <!-- MOBILE MENU -->
+
+    <div
+        class="mobile-menu"
+        id="mobileMenu"
+    >
+
+        <a href="{{ url_for('index') }}">
+
+            <i class="fa-solid fa-house"></i>
+
+            Home
+
+        </a>
+
+
+        {% if 'products' in current_app.view_functions %}
+
+        <a href="{{ url_for('products') }}">
+
+            <i class="fa-solid fa-shop"></i>
+
+            Shop
+
+        </a>
+
+        {% endif %}
+
+
+        {% if 'categories' in current_app.view_functions %}
+
+        <a href="{{ url_for('categories') }}">
+
+            <i class="fa-solid fa-layer-group"></i>
+
+            Categories
+
+        </a>
+
+        {% endif %}
+
+
+        {% if 'about' in current_app.view_functions %}
+
+        <a href="{{ url_for('about') }}">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            About
+
+        </a>
+
+        {% endif %}
+
+
+        {% if 'contact' in current_app.view_functions %}
+
+        <a href="{{ url_for('contact') }}">
+
+            <i class="fa-solid fa-envelope"></i>
+
+            Contact
+
+        </a>
+
+        {% endif %}
+
+
+        {% if 'cart' in current_app.view_functions %}
+
+        <a href="{{ url_for('cart') }}">
+
+            <i class="fa-solid fa-cart-shopping"></i>
+
+            Cart
+
+            {% if cart_count > 0 %}
+
+                <span class="cart-badge">
+                    {{ cart_count }}
+                </span>
+
+            {% endif %}
+
+        </a>
+
+        {% endif %}
+
+
+        {% if g.user and g.user['is_admin'] %}
+
+        <a href="{{ url_for('admin_dashboard') }}">
+
+            <i class="fa-solid fa-gauge-high"></i>
+
+            Admin Dashboard
+
+        </a>
+
+        {% endif %}
+
+
+        {% if g.user %}
+
+        <a href="{{ url_for('logout') }}">
+
+            <i class="fa-solid fa-right-from-bracket"></i>
+
+            Logout
+
+        </a>
+
+        {% else %}
+
+        {% if 'login' in current_app.view_functions %}
+
+        <a href="{{ url_for('login') }}">
+
+            <i class="fa-solid fa-right-to-bracket"></i>
+
+            Login
+
+        </a>
+
+        {% endif %}
+
+        {% endif %}
 
     </div>
 
@@ -1136,284 +2153,253 @@
 {% endif %}
 
 
-<!-- =========================================================
+<!-- =============================================================
      FLASH MESSAGES
-========================================================= -->
+     ============================================================= -->
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 
     {% if messages %}
 
-        {% if is_admin_page %}
-            <div class="admin-flashes">
-        {% else %}
-            <div class="container">
-        {% endif %}
+        <div class="flash-container">
 
             {% for category, message in messages %}
 
-                <div
-                    class="flash {{ category }}"
-                    role="alert"
-                >
-                    {{ message }}
+                <div class="flash {{ category }}">
+
+                    {% if category == 'success' %}
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+                    {% elif category in ['danger', 'error'] %}
+
+                        <i class="fa-solid fa-circle-exclamation"></i>
+
+                    {% elif category == 'warning' %}
+
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+
+                    {% else %}
+
+                        <i class="fa-solid fa-circle-info"></i>
+
+                    {% endif %}
+
+                    <span>
+                        {{ message }}
+                    </span>
+
                 </div>
 
             {% endfor %}
 
-            </div>
+        </div>
 
     {% endif %}
 
 {% endwith %}
 
 
-<!-- =========================================================
-     SINGLE CONTENT BLOCK
-     
-     IMPORTANT:
-     There must be ONLY ONE content block in this file.
-========================================================= -->
+<!-- =============================================================
+     CHILD PAGE CONTENT
+     THIS IS THE ONLY CONTENT BLOCK
+     ============================================================= -->
 
 {% block content %}{% endblock %}
 
 
+<!-- Close the single main opened above -->
+
 </main>
 
 
-<!-- =========================================================
-     CLOSE ADMIN / CUSTOMER LAYOUT
-========================================================= -->
+<!-- =============================================================
+     CLOSE ADMIN OR CUSTOMER LAYOUT
+     ============================================================= -->
 
-{% if is_admin_page %}
+{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
 
-        </main>
+        </div>
+        <!-- /.admin-main -->
 
     </div>
-    <!-- END .admin-main -->
+    <!-- /.admin-layout -->
 
-</div>
-<!-- END .admin-layout -->
 
 {% else %}
 
 
-<!-- =========================================================
+<!-- =============================================================
      CUSTOMER FOOTER
-========================================================= -->
+     ============================================================= -->
 
 <footer class="site-footer">
 
-    <div class="site-footer-inner">
+    <div class="footer-inner">
 
-        <div
-            style="
-                display:grid;
-                grid-template-columns:
-                    repeat(auto-fit,minmax(200px,1fr));
-                gap:30px;
-            "
-        >
+        <div class="footer-grid">
 
-            <div>
 
-                <h3
-                    style="
-                        margin:0 0 10px;
-                        font-size:17px;
-                    "
-                >
-                    {{ store.store_name if store and store.store_name else 'Store' }}
+            <!-- BRAND -->
+
+            <div class="footer-brand">
+
+                <h3>
+                    {{ store.get('store_name', 'Online Store') }}
                 </h3>
 
-                <p
-                    style="
-                        margin:0;
-                        color:#aaa7b5;
-                        line-height:1.7;
-                        font-size:13px;
-                    "
-                >
-                    {{
-                        store.description
-                        if store and store.description
-                        else 'Shop quality products online with us.'
-                    }}
+                <p>
+
+                    {{ store.get(
+                        'description',
+                        'A simple and convenient way to shop online.'
+                    ) }}
+
                 </p>
 
             </div>
 
 
-            <div>
+            <!-- SHOP -->
 
-                <h4
-                    style="
-                        margin:0 0 12px;
-                        font-size:13px;
-                    "
-                >
-                    Quick Links
+            <div class="footer-col">
+
+                <h4>
+                    Shop
                 </h4>
 
-                <div
-                    style="
-                        display:flex;
-                        flex-direction:column;
-                        gap:8px;
-                        font-size:12px;
-                    "
-                >
+                {% if 'products' in current_app.view_functions %}
 
-                    <a href="{{ url_for('index') }}">
-                        Home
-                    </a>
+                <a href="{{ url_for('products') }}">
+                    All Products
+                </a>
 
-                    <a href="{{ url_for('shop') }}">
-                        Shop
-                    </a>
+                {% endif %}
 
-                    <a href="{{ url_for('categories') }}">
-                        Categories
-                    </a>
 
-                    {% if store and store.get('nav_about', '1') == '1' %}
-                    <a href="{{ url_for('about') }}">
-                        About
-                    </a>
-                    {% endif %}
+                {% if 'categories' in current_app.view_functions %}
 
-                    {% if store and store.get('nav_contact', '1') == '1' %}
-                    <a href="{{ url_for('contact') }}">
-                        Contact
-                    </a>
-                    {% endif %}
+                <a href="{{ url_for('categories') }}">
+                    Categories
+                </a>
 
-                </div>
+                {% endif %}
+
+
+                {% if 'cart' in current_app.view_functions %}
+
+                <a href="{{ url_for('cart') }}">
+                    Shopping Cart
+                </a>
+
+                {% endif %}
 
             </div>
 
 
-            <div>
+            <!-- COMPANY -->
 
-                <h4
-                    style="
-                        margin:0 0 12px;
-                        font-size:13px;
-                    "
-                >
+            <div class="footer-col">
+
+                <h4>
+                    Company
+                </h4>
+
+                {% if 'about' in current_app.view_functions %}
+
+                <a href="{{ url_for('about') }}">
+                    About Us
+                </a>
+
+                {% endif %}
+
+
+                {% if 'contact' in current_app.view_functions %}
+
+                <a href="{{ url_for('contact') }}">
+                    Contact
+                </a>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- ACCOUNT -->
+
+            <div class="footer-col">
+
+                <h4>
                     Account
                 </h4>
 
-                <div
-                    style="
-                        display:flex;
-                        flex-direction:column;
-                        gap:8px;
-                        font-size:12px;
-                    "
+
+                {% if g.user %}
+
+                <a href="{{ url_for('logout') }}">
+                    Logout
+                </a>
+
+                {% else %}
+
+                {% if 'login' in current_app.view_functions %}
+
+                <a href="{{ url_for('login') }}">
+                    Login
+                </a>
+
+                {% endif %}
+
+
+                {% if 'register' in current_app.view_functions %}
+
+                <a href="{{ url_for('register') }}">
+                    Create Account
+                </a>
+
+                {% endif %}
+
+                {% endif %}
+
+
+                {% if whatsapp_url %}
+
+                <a
+                    href="{{ whatsapp_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
 
-                    {% if g.user %}
+                    <i class="fa-brands fa-whatsapp"></i>
 
-                    <a href="{{ url_for('account') }}">
-                        My Account
-                    </a>
+                    WhatsApp
 
-                    <a href="{{ url_for('orders') }}">
-                        My Orders
-                    </a>
+                </a>
 
-                    {% else %}
-
-                    <a href="{{ url_for('login') }}">
-                        Login
-                    </a>
-
-                    <a href="{{ url_for('register') }}">
-                        Create Account
-                    </a>
-
-                    {% endif %}
-
-                </div>
-
-            </div>
-
-
-            <div>
-
-                <h4
-                    style="
-                        margin:0 0 12px;
-                        font-size:13px;
-                    "
-                >
-                    Contact
-                </h4>
-
-                <div
-                    style="
-                        display:flex;
-                        flex-direction:column;
-                        gap:8px;
-                        color:#aaa7b5;
-                        font-size:12px;
-                    "
-                >
-
-                    {% if store and store.phone %}
-                    <span>
-                        <i class="fa-solid fa-phone"></i>
-                        {{ store.phone }}
-                    </span>
-                    {% endif %}
-
-
-                    {% if store and store.email %}
-                    <span>
-                        <i class="fa-solid fa-envelope"></i>
-                        {{ store.email }}
-                    </span>
-                    {% endif %}
-
-
-                    {% if store and store.address %}
-                    <span>
-                        <i class="fa-solid fa-location-dot"></i>
-                        {{ store.address }}
-                    </span>
-                    {% endif %}
-
-                </div>
+                {% endif %}
 
             </div>
 
         </div>
 
 
-        <div
-            style="
-                margin-top:35px;
-                padding-top:18px;
-                border-top:1px solid rgba(255,255,255,.08);
-                display:flex;
-                align-items:center;
-                justify-content:space-between;
-                gap:15px;
-                flex-wrap:wrap;
-                color:#85828f;
-                font-size:11px;
-            "
-        >
+        <!-- FOOTER BOTTOM -->
+
+        <div class="footer-bottom">
 
             <span>
+
                 © {{ current_year }}
-                {{ store.store_name if store and store.store_name else 'Store' }}.
+
+                {{ store.get('store_name', 'Online Store') }}.
+
                 All rights reserved.
+
             </span>
 
+
             <span>
-                Powered by your online store
+                Powered by S&A CreativeMind
             </span>
 
         </div>
@@ -1423,95 +2409,233 @@
 </footer>
 
 
-<!-- CUSTOMER JAVASCRIPT -->
-
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
-
 {% endif %}
 
 
-<!-- =========================================================
+<!-- =============================================================
      ADMIN JAVASCRIPT
-========================================================= -->
+     ============================================================= -->
 
-{% if is_admin_page %}
+{% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
 
 <script>
 
-function toggleAdminSidebar() {
-    const sidebar = document.getElementById("adminSidebar");
+    function toggleAdminSidebar() {
 
-    if (sidebar) {
+        const sidebar =
+            document.getElementById("adminSidebar");
+
+        const overlay =
+            document.getElementById("adminOverlay");
+
+        if (!sidebar) {
+            return;
+        }
+
         sidebar.classList.toggle("open");
-    }
-}
 
-
-function closeAdminSidebar() {
-    const sidebar = document.getElementById("adminSidebar");
-
-    if (sidebar) {
-        sidebar.classList.remove("open");
-    }
-}
-
-
-/* Close sidebar after clicking a navigation link on mobile */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const sidebar = document.getElementById("adminSidebar");
-
-    if (!sidebar) {
-        return;
+        if (overlay) {
+            overlay.classList.toggle(
+                "show",
+                sidebar.classList.contains("open")
+            );
+        }
     }
 
-    const links = sidebar.querySelectorAll("a");
 
-    links.forEach(function (link) {
+    function closeAdminSidebar() {
 
-        link.addEventListener("click", function () {
+        const sidebar =
+            document.getElementById("adminSidebar");
 
-            if (window.innerWidth <= 1000) {
-                sidebar.classList.remove("open");
+        const overlay =
+            document.getElementById("adminOverlay");
+
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        if (overlay) {
+            overlay.classList.remove("show");
+        }
+    }
+
+
+    document.addEventListener(
+        "click",
+        function(event) {
+
+            const sidebar =
+                document.getElementById("adminSidebar");
+
+            const toggle =
+                document.querySelector(".admin-mobile-toggle");
+
+            if (!sidebar || !toggle) {
+                return;
             }
 
-        });
+            if (
+                window.innerWidth <= 900 &&
+                sidebar.classList.contains("open") &&
+                !sidebar.contains(event.target) &&
+                !toggle.contains(event.target)
+            ) {
 
-    });
+                closeAdminSidebar();
 
-});
+            }
 
-
-/* Escape key closes mobile sidebar */
-
-document.addEventListener("keydown", function (event) {
-
-    if (event.key === "Escape") {
-        closeAdminSidebar();
-    }
-
-});
+        }
+    );
 
 
-/* Automatically close sidebar when resizing to desktop */
+    window.addEventListener(
+        "resize",
+        function() {
 
-window.addEventListener("resize", function () {
+            if (window.innerWidth > 900) {
+                closeAdminSidebar();
+            }
 
-    if (window.innerWidth > 1000) {
-        closeAdminSidebar();
-    }
-
-});
+        }
+    );
 
 </script>
 
 {% endif %}
 
 
-<!-- =========================================================
-     PAGE-SPECIFIC SCRIPTS
-========================================================= -->
+<!-- =============================================================
+     CUSTOMER JAVASCRIPT
+     ============================================================= -->
+
+<script>
+
+    function toggleMobileMenu() {
+
+        const menu =
+            document.getElementById("mobileMenu");
+
+        const button =
+            document.getElementById("mobileMenuButton");
+
+        if (!menu) {
+            return;
+        }
+
+        const isOpen =
+            menu.classList.toggle("open");
+
+        if (button) {
+
+            button.setAttribute(
+                "aria-expanded",
+                isOpen ? "true" : "false"
+            );
+
+            const icon =
+                button.querySelector("i");
+
+            if (icon) {
+
+                icon.className =
+                    isOpen
+                    ? "fa-solid fa-xmark"
+                    : "fa-solid fa-bars";
+
+            }
+
+        }
+
+    }
+
+
+    document.addEventListener(
+        "click",
+        function(event) {
+
+            const menu =
+                document.getElementById("mobileMenu");
+
+            const button =
+                document.getElementById("mobileMenuButton");
+
+            if (!menu || !button) {
+                return;
+            }
+
+            if (
+                menu.classList.contains("open") &&
+                !menu.contains(event.target) &&
+                !button.contains(event.target)
+            ) {
+
+                menu.classList.remove("open");
+
+                button.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+                const icon =
+                    button.querySelector("i");
+
+                if (icon) {
+                    icon.className =
+                        "fa-solid fa-bars";
+                }
+
+            }
+
+        }
+    );
+
+
+    window.addEventListener(
+        "resize",
+        function() {
+
+            if (window.innerWidth > 1050) {
+
+                const menu =
+                    document.getElementById("mobileMenu");
+
+                const button =
+                    document.getElementById("mobileMenuButton");
+
+                if (menu) {
+                    menu.classList.remove("open");
+                }
+
+                if (button) {
+
+                    button.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                    const icon =
+                        button.querySelector("i");
+
+                    if (icon) {
+                        icon.className =
+                            "fa-solid fa-bars";
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+</script>
+
+
+<!-- =============================================================
+     CHILD SCRIPTS
+     ============================================================= -->
 
 {% block scripts %}{% endblock %}
 
