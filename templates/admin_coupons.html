@@ -3,57 +3,171 @@
 {% block title %}Coupons — {{ store.store_name }}{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-  <div class="container">
-    <span class="eyebrow">ADMIN</span>
-    <h1>Discount &amp; Coupons</h1>
-    <p>Create promotional codes and control how customers use them.</p>
-  </div>
-</section>
+<style>
+  .coupon-page{background:#f6f8fc;min-height:100vh;padding-bottom:50px}
+  .coupon-wrap{max-width:1180px;margin:auto}
+  .coupon-hero{padding:34px 0 24px}
+  .coupon-eyebrow{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:#eef2ff;color:#4f46e5;font-size:12px;font-weight:800;letter-spacing:.08em}
+  .coupon-hero h1{margin:12px 0 6px;font-size:clamp(28px,5vw,42px);line-height:1.08}
+  .coupon-hero p{margin:0;color:#64748b;max-width:650px}
+  .coupon-grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:22px;align-items:start}
+  .coupon-card{background:#fff;border:1px solid #e7ebf2;border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.06);overflow:hidden}
+  .coupon-card-head{padding:22px 22px 16px;border-bottom:1px solid #edf0f5}
+  .coupon-card-head h2{margin:0 0 5px;font-size:20px}
+  .coupon-card-head p{margin:0;color:#718096;font-size:14px}
+  .coupon-form{padding:22px;display:grid;gap:15px}
+  .field{display:grid;gap:7px}
+  .field label{font-size:13px;font-weight:750;color:#334155}
+  .field input,.field select{width:100%;box-sizing:border-box;border:1px solid #dbe1ea;border-radius:11px;background:#fff;padding:12px 13px;font:inherit;color:#172033;outline:none;transition:.2s}
+  .field input:focus,.field select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .primary-btn{border:0;border-radius:12px;padding:13px 17px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 18px rgba(79,70,229,.22);transition:transform .15s,box-shadow .15s}
+  .primary-btn:hover{transform:translateY(-1px);box-shadow:0 11px 22px rgba(79,70,229,.28)}
+  .coupon-table-wrap{overflow-x:auto}
+  .coupon-table{width:100%;border-collapse:collapse;min-width:720px}
+  .coupon-table th{padding:13px 16px;text-align:left;background:#f8fafc;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  .coupon-table td{padding:15px 16px;border-top:1px solid #edf0f5;color:#334155;font-size:14px;vertical-align:middle}
+  .code{font-weight:850;color:#172033;letter-spacing:.04em}
+  .discount{font-weight:800;color:#4f46e5}
+  .status{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+  .status-active{background:#ecfdf3;color:#15803d}
+  .status-disabled{background:#f1f5f9;color:#64748b}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .action-btn{border:1px solid #dbe1ea;background:#fff;color:#334155;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer;transition:.15s}
+  .action-btn:hover{background:#f8fafc;transform:translateY(-1px)}
+  .enable-btn{border-color:#bbf7d0;background:#f0fdf4;color:#15803d}
+  .disable-btn{border-color:#fde68a;background:#fffbeb;color:#a16207}
+  .delete-btn{border-color:#fecaca;background:#fff5f5;color:#dc2626}
+  .empty{padding:38px 20px;text-align:center;color:#718096}
+  .empty-icon{font-size:30px;margin-bottom:8px}
+  @media(max-width:850px){.coupon-grid{grid-template-columns:1fr}.coupon-wrap{padding:0 14px}.coupon-hero{padding-top:24px}}
+  @media(max-width:520px){.two-col{grid-template-columns:1fr}.coupon-card-head,.coupon-form{padding:18px}.coupon-hero h1{font-size:30px}}
+</style>
 
-<section class="section">
-  <div class="container" style="display:grid;gap:20px">
-    <div class="admin-card">
-      <h2>Create coupon</h2>
-      <form method="post" style="display:grid;gap:12px">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
-          <label>Code<input name="code" maxlength="40" required placeholder="e.g. WELCOME10"></label>
-          <label>Discount type<select name="discount_type"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed amount (₦)</option></select></label>
-          <label>Discount value<input name="discount_value" type="number" min="0.01" step="0.01" required placeholder="10"></label>
-          <label>Minimum order<input name="min_order" type="number" min="0" step="0.01" value="0"></label>
-          <label>Usage limit<input name="max_uses" type="number" min="1" step="1" placeholder="Unlimited"></label>
-          <label>Expires at<input name="expires_at" type="datetime-local"></label>
-        </div>
-        <button type="submit">Create coupon</button>
-      </form>
+<section class="coupon-page">
+  <div class="coupon-wrap">
+    <div class="coupon-hero">
+      <span class="coupon-eyebrow">ADMIN • PROMOTIONS</span>
+      <h1>Discount &amp; Coupons</h1>
+      <p>Create professional promotional codes, reward customers, and control coupon usage from one simple dashboard.</p>
     </div>
 
-    <div class="admin-card">
-      <h2>Existing coupons</h2>
-      {% if coupons %}
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr><th style="text-align:left;padding:10px">Code</th><th style="text-align:left;padding:10px">Discount</th><th style="text-align:left;padding:10px">Min. order</th><th style="text-align:left;padding:10px">Usage</th><th style="text-align:left;padding:10px">Expiry</th><th style="text-align:left;padding:10px">Status</th><th style="text-align:left;padding:10px">Actions</th></tr></thead>
-          <tbody>
-          {% for c in coupons %}
-          <tr style="border-top:1px solid #eee">
-            <td style="padding:10px"><strong>{{ c.code }}</strong></td>
-            <td style="padding:10px">{% if c.discount_type == 'percentage' %}{{ c.discount_value|round(2) }}%{% else %}{{ store.currency }}{{ '{:,.0f}'.format(c.discount_value) }}{% endif %}</td>
-            <td style="padding:10px">{{ store.currency }}{{ '{:,.0f}'.format(c.min_order) }}</td>
-            <td style="padding:10px">{{ c.used_count }}{% if c.max_uses %} / {{ c.max_uses }}{% else %} / ∞{% endif %}</td>
-            <td style="padding:10px">{{ c.expires_at or 'No expiry' }}</td>
-            <td style="padding:10px">{{ 'Active' if c.active == 1 else 'Disabled' }}</td>
-            <td style="padding:10px;display:flex;gap:8px;flex-wrap:wrap">
-              <form method="post" action="{{ url_for('toggle_coupon', coupon_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">{{ 'Disable' if c.active == 1 else 'Enable' }}</button></form>
-              <form method="post" action="{{ url_for('delete_coupon', coupon_id=c.id) }}" onsubmit="return confirm('Delete this coupon?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Delete</button></form>
-            </td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
+    <div class="coupon-grid">
+      <div class="coupon-card">
+        <div class="coupon-card-head">
+          <h2>Create a coupon</h2>
+          <p>Set the discount, minimum order and usage rules.</p>
+        </div>
+        <form method="post" class="coupon-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="field">
+            <label for="code">Coupon code</label>
+            <input id="code" name="code" maxlength="40" required placeholder="e.g. WELCOME10" autocomplete="off">
+          </div>
+
+          <div class="two-col">
+            <div class="field">
+              <label for="discount_type">Discount type</label>
+              <select id="discount_type" name="discount_type">
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed amount (₦)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="discount_value">Discount value</label>
+              <input id="discount_value" name="discount_value" type="number" min="0.01" step="0.01" required placeholder="10">
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="field">
+              <label for="min_order">Minimum order</label>
+              <input id="min_order" name="min_order" type="number" min="0" step="0.01" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label for="max_uses">Usage limit</label>
+              <input id="max_uses" name="max_uses" type="number" min="1" step="1" placeholder="Unlimited">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="expires_at">Expiry date &amp; time</label>
+            <input id="expires_at" name="expires_at" type="datetime-local">
+          </div>
+
+          <button class="primary-btn" type="submit">＋ Create Coupon</button>
+        </form>
       </div>
-      {% else %}<p>No coupons created yet.</p>{% endif %}
+
+      <div class="coupon-card">
+        <div class="coupon-card-head">
+          <h2>Existing coupons</h2>
+          <p>Manage the promotional codes currently available in your store.</p>
+        </div>
+
+        {% if coupons %}
+        <div class="coupon-table-wrap">
+          <table class="coupon-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Discount</th>
+                <th>Min. order</th>
+                <th>Usage</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in coupons %}
+              <tr>
+                <td><span class="code">{{ c.code }}</span></td>
+                <td class="discount">
+                  {% if c.discount_type == 'percentage' %}
+                    {{ c.discount_value|round(2) }}%
+                  {% else %}
+                    {{ store.currency }}{{ '{:,.0f}'.format(c.discount_value) }}
+                  {% endif %}
+                </td>
+                <td>{{ store.currency }}{{ '{:,.0f}'.format(c.min_order) }}</td>
+                <td>{{ c.used_count }}{% if c.max_uses %} / {{ c.max_uses }}{% else %} / ∞{% endif %}</td>
+                <td>{{ c.expires_at or 'No expiry' }}</td>
+                <td>
+                  {% if c.active == 1 %}
+                    <span class="status status-active">● Active</span>
+                  {% else %}
+                    <span class="status status-disabled">● Disabled</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="actions">
+                    <form method="post" action="{{ url_for('toggle_coupon', coupon_id=c.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="action-btn {{ 'disable-btn' if c.active == 1 else 'enable-btn' }}" type="submit">
+                        {{ 'Disable' if c.active == 1 else 'Enable' }}
+                      </button>
+                    </form>
+                    <form method="post" action="{{ url_for('delete_coupon', coupon_id=c.id) }}" onsubmit="return confirm('Delete this coupon?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="action-btn delete-btn" type="submit">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty">
+          <div class="empty-icon">🎟️</div>
+          <strong>No coupons yet</strong>
+          <p>Create your first coupon using the form.</p>
+        </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 </section>
