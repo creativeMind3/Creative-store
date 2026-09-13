@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Reports — {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<style>
+.sales-page{padding:28px 0 60px;background:#f7f7fb}
+.sales-wrap{max-width:1180px;margin:auto;padding:0 18px}
+.sales-hero{background:linear-gradient(135deg,#171326,#6d4aff);color:#fff;border-radius:24px;padding:30px;margin-bottom:22px;box-shadow:0 14px 35px rgba(38,24,78,.16)}
+.sales-eyebrow{font-size:12px;font-weight:800;letter-spacing:1.4px;opacity:.78}
+.sales-hero h1{margin:8px 0 6px;font-size:32px}
+.sales-hero p{margin:0;opacity:.86}
+.sales-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px}
+.sales-card{background:#fff;border:1px solid #eceaf3;border-radius:18px;padding:21px;box-shadow:0 8px 24px rgba(25,18,50,.05)}
+.sales-card .label{font-size:13px;color:#777284;font-weight:700}
+.sales-card .value{font-size:27px;font-weight:850;margin-top:8px;color:#191526}
+.sales-card .hint{font-size:12px;color:#9691a0;margin-top:5px}
+.sales-card.primary{background:linear-gradient(135deg,#6d4aff,#8b6cff);color:#fff;border:0}
+.sales-card.primary .label,.sales-card.primary .hint{color:rgba(255,255,255,.82)}
+.sales-card.primary .value{color:#fff}
+.sales-section{background:#fff;border:1px solid #eceaf3;border-radius:20px;padding:22px;margin-bottom:22px;box-shadow:0 8px 24px rgba(25,18,50,.05)}
+.sales-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.sales-head h2{font-size:19px;margin:0;color:#191526}
+.sales-head span{font-size:12px;color:#898392}
+.sales-table-wrap{overflow-x:auto}
+.sales-table{width:100%;border-collapse:collapse;min-width:600px}
+.sales-table th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#8a8592;background:#faf9fc;padding:13px}
+.sales-table td{padding:14px 13px;border-top:1px solid #f0eef4;color:#393442;font-size:14px}
+.sales-table tr:hover td{background:#fcfbff}
+.rank{width:34px;height:34px;display:inline-grid;place-items:center;border-radius:10px;background:#f0ecff;color:#6d4aff;font-weight:800}
+.money{font-weight:800;color:#191526}
+.status-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.status-box{padding:15px;border-radius:14px;background:#faf9fc;text-align:center}
+.status-box strong{display:block;font-size:21px;color:#191526}
+.status-box span{font-size:11px;color:#817c89}
+.empty{text-align:center;padding:28px;color:#88818f}
+@media(max-width:850px){.sales-grid{grid-template-columns:repeat(2,1fr)}.status-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.sales-page{padding-top:16px}.sales-hero{padding:22px;border-radius:18px}.sales-hero h1{font-size:25px}.sales-grid{grid-template-columns:1fr}.status-grid{grid-template-columns:repeat(2,1fr)}.sales-section{padding:16px;border-radius:16px}}
+</style>
+
+<section class="sales-page">
+    <div class="sales-wrap">
+        <div class="sales-hero">
+            <div class="sales-eyebrow">ADMIN • BUSINESS ANALYTICS</div>
+            <h1>Sales Reports</h1>
+            <p>Track your store performance, sales activity and best-selling products.</p>
+        </div>
+
+        <div class="sales-grid">
+            <div class="sales-card primary">
+                <div class="label">Total Sales</div>
+                <div class="value">{{ store.currency }}{{ '%.2f'|format(summary.total_sales|float) }}</div>
+                <div class="hint">All non-cancelled orders</div>
+            </div>
+            <div class="sales-card">
+                <div class="label">Valid Orders</div>
+                <div class="value">{{ summary.valid_orders }}</div>
+                <div class="hint">Orders contributing to sales</div>
+            </div>
+            <div class="sales-card">
+                <div class="label">Delivered Sales</div>
+                <div class="value">{{ store.currency }}{{ '%.2f'|format(summary.delivered_sales|float) }}</div>
+                <div class="hint">{{ summary.delivered_orders }} delivered order{{ '' if summary.delivered_orders == 1 else 's' }}</div>
+            </div>
+            <div class="sales-card">
+                <div class="label">Cancelled Orders</div>
+                <div class="value">{{ summary.cancelled_orders }}</div>
+                <div class="hint">{{ store.currency }}{{ '%.2f'|format(summary.cancelled_value|float) }} cancelled value</div>
+            </div>
+            <div class="sales-card">
+                <div class="label">Average Order Value</div>
+                <div class="value">{{ store.currency }}{{ '%.2f'|format((summary.total_sales|float / summary.valid_orders) if summary.valid_orders else 0) }}</div>
+                <div class="hint">Based on non-cancelled orders</div>
+            </div>
+            <div class="sales-card">
+                <div class="label">Reporting Period</div>
+                <div class="value">30 days</div>
+                <div class="hint">Recent daily sales shown below</div>
+            </div>
+        </div>
+
+        <div class="sales-section">
+            <div class="sales-head">
+                <h2>Order Status</h2>
+                <span>Current order breakdown</span>
+            </div>
+            <div class="status-grid">
+                {% for status in status_options %}
+                <div class="status-box">
+                    <strong>{{ status_counts.get(status, 0) }}</strong>
+                    <span>{{ status }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="sales-section">
+            <div class="sales-head">
+                <h2>Best-Selling Products</h2>
+                <span>Top 10 by units sold</span>
+            </div>
+            {% if best_sellers %}
+            <div class="sales-table-wrap">
+                <table class="sales-table">
+                    <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+                    <tbody>
+                    {% for product in best_sellers %}
+                    <tr>
+                        <td><span class="rank">{{ loop.index }}</span></td>
+                        <td><strong>{{ product.product_name }}</strong></td>
+                        <td>{{ product.units_sold }}</td>
+                        <td class="money">{{ store.currency }}{{ '%.2f'|format(product.revenue|float) }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}<div class="empty">No sales data yet.</div>{% endif %}
+        </div>
+
+        <div class="sales-section">
+            <div class="sales-head">
+                <h2>Sales by Date</h2>
+                <span>Latest 30 sales days</span>
+            </div>
+            {% if daily_sales %}
+            <div class="sales-table-wrap">
+                <table class="sales-table">
+                    <thead><tr><th>Date</th><th>Orders</th><th>Sales</th></tr></thead>
+                    <tbody>
+                    {% for day in daily_sales %}
+                    <tr>
+                        <td>{{ day.sale_date }}</td>
+                        <td>{{ day.orders_count }}</td>
+                        <td class="money">{{ store.currency }}{{ '%.2f'|format(day.sales|float) }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}<div class="empty">No daily sales data yet.</div>{% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
