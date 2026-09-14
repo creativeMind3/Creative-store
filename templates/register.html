@@ -1,36 +1,895 @@
-{% extends 'base.html' %}
-{% block title %}Create account · {{ store.store_name }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Create Account — {{ store.store_name }}{% endblock %}
+
 {% block content %}
-<section class="auth-page auth-modern">
-  <div class="auth-modern-shell">
-    <div class="auth-showcase register-showcase">
-      <div class="showcase-orb orb-a"></div><div class="showcase-orb orb-b"></div>
-      <a class="showcase-brand" href="{{ url_for('index') }}">{% if store.logo %}<img class="showcase-logo-image" src="{{ url_for('uploaded_file', filename=store.logo) }}" alt="{{ store.store_name }} logo">{% else %}<span class="showcase-logo">{{ (store.store_name|trim)[:1]|upper or 'S' }}</span>{% endif %}<span>{{ store.store_name }}</span></a>
-      <div class="showcase-content">
-        <span class="showcase-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> YOUR SHOPPING SPACE</span>
-        <h2>Create your account.<br><span>Make shopping easier.</span></h2>
-        <p>Join {{ store.store_name }} and keep your shopping activity organised from one simple account.</p>
-        <div class="showcase-features">
-          <div><i class="fa-solid fa-receipt"></i><span><b>Order history</b><small>Find your previous orders whenever you need them.</small></span></div>
-          <div><i class="fa-solid fa-cart-shopping"></i><span><b>Easy shopping</b><small>Move from product discovery to checkout faster.</small></span></div>
-          <div><i class="fa-solid fa-user-check"></i><span><b>Personal account</b><small>Keep your customer information in one place.</small></span></div>
+
+<style>
+    .register-page {
+        min-height: calc(100vh - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 45px 18px;
+        background:
+            radial-gradient(circle at 5% 15%, rgba(109,74,255,.13), transparent 30%),
+            radial-gradient(circle at 95% 85%, rgba(109,74,255,.10), transparent 30%),
+            #f7f8fc;
+    }
+
+    .register-shell {
+        width: 100%;
+        max-width: 1080px;
+        display: grid;
+        grid-template-columns: .9fr 1.1fr;
+        background: #fff;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 25px 70px rgba(20,20,40,.12);
+        border: 1px solid rgba(0,0,0,.05);
+        animation: registerIn .55s ease both;
+    }
+
+    @keyframes registerIn {
+        from {
+            opacity: 0;
+            transform: translateY(18px) scale(.985);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* LEFT PANEL */
+    .register-showcase {
+        position: relative;
+        padding: 52px;
+        color: #fff;
+        min-height: 650px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 80% 20%, rgba(255,255,255,.13), transparent 28%),
+            linear-gradient(145deg, #171827, #30236d 55%, #6d4aff);
+    }
+
+    .register-orb {
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        right: -110px;
+        bottom: -100px;
+        background: rgba(255,255,255,.08);
+    }
+
+    .register-brand {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+    }
+
+    .register-logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.16);
+        overflow: hidden;
+    }
+
+    .register-main-copy {
+        position: relative;
+        z-index: 2;
+        margin: 60px 0;
+    }
+
+    .register-main-copy .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 13px;
+        border-radius: 100px;
+        background: rgba(255,255,255,.12);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+    }
+
+    .register-main-copy h1 {
+        font-size: clamp(38px,4vw,58px);
+        line-height: 1;
+        letter-spacing: -2px;
+        margin: 0 0 20px;
+    }
+
+    .register-main-copy p {
+        max-width: 410px;
+        line-height: 1.7;
+        color: rgba(255,255,255,.78);
+        margin: 0;
+    }
+
+    .register-features {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        gap: 13px;
+    }
+
+    .register-feature {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: rgba(255,255,255,.9);
+    }
+
+    .register-feature-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: rgba(255,255,255,.12);
+    }
+
+    /* FORM */
+    .register-form-area {
+        padding: 52px;
+        display: flex;
+        align-items: center;
+    }
+
+    .register-form-box {
+        width: 100%;
+        max-width: 480px;
+        margin: auto;
+    }
+
+    .register-heading {
+        margin-bottom: 27px;
+    }
+
+    .register-heading .eyebrow {
+        color: #6d4aff;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+    }
+
+    .register-heading h2 {
+        margin: 8px 0 8px;
+        font-size: 34px;
+        letter-spacing: -1px;
+        color: #171827;
+    }
+
+    .register-heading p {
+        margin: 0;
+        color: #7b7d89;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .register-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .register-group {
+        margin-bottom: 17px;
+    }
+
+    .register-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #30313d;
+    }
+
+    .register-input-wrap {
+        position: relative;
+    }
+
+    .register-input-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999ba7;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .register-input {
+        width: 100%;
+        height: 53px;
+        box-sizing: border-box;
+        border: 1px solid #e4e5eb;
+        border-radius: 14px;
+        background: #fafbfc;
+        padding: 0 48px;
+        outline: none;
+        font-size: 14px;
+        color: #22232d;
+        transition: .2s ease;
+    }
+
+    .register-input:focus {
+        background: #fff;
+        border-color: #6d4aff;
+        box-shadow: 0 0 0 4px rgba(109,74,255,.10);
+    }
+
+    /* EYE BUTTON */
+    .register-password-toggle {
+        position: absolute;
+        right: 7px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 39px;
+        height: 39px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #858895;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        z-index: 5;
+        transition: .2s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .register-password-toggle:hover {
+        background: #f0efff;
+        color: #6d4aff;
+    }
+
+    .register-password-toggle:active {
+        transform: translateY(-50%) scale(.9);
+    }
+
+    .register-password-toggle i {
+        pointer-events: none;
+    }
+
+    .password-hint {
+        margin-top: 7px;
+        font-size: 11px;
+        color: #92949f;
+    }
+
+    .password-strength {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    .strength-bar {
+        height: 4px;
+        flex: 1;
+        border-radius: 10px;
+        background: #e8e8ed;
+        transition: .2s ease;
+    }
+
+    .register-submit {
+        width: 100%;
+        height: 55px;
+        border: 0;
+        border-radius: 14px;
+        background: linear-gradient(135deg,#6d4aff,#5232d4);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 12px 25px rgba(109,74,255,.22);
+        transition: .2s ease;
+        margin-top: 5px;
+    }
+
+    .register-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 30px rgba(109,74,255,.28);
+    }
+
+    .register-submit:active {
+        transform: translateY(0);
+    }
+
+    .register-submit.loading {
+        opacity: .75;
+        pointer-events: none;
+    }
+
+    .register-footer {
+        text-align: center;
+        margin-top: 22px;
+        color: #7d7f8b;
+        font-size: 14px;
+    }
+
+    .register-footer a {
+        color: #6d4aff;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .register-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .register-security {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        margin-top: 18px;
+        color: #999ba6;
+        font-size: 12px;
+    }
+
+    .register-security i {
+        color: #35a66f;
+    }
+
+    /* MOBILE */
+    @media (max-width: 850px) {
+        .register-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .register-showcase {
+            min-height: auto;
+            padding: 32px;
+        }
+
+        .register-main-copy {
+            margin: 50px 0 35px;
+        }
+
+        .register-main-copy h1 {
+            font-size: 42px;
+        }
+
+        .register-form-area {
+            padding: 38px 28px;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .register-page {
+            padding: 20px 12px;
+        }
+
+        .register-showcase {
+            padding: 25px;
+        }
+
+        .register-main-copy {
+            margin: 38px 0 30px;
+        }
+
+        .register-main-copy h1 {
+            font-size: 35px;
+        }
+
+        .register-form-area {
+            padding: 30px 19px 35px;
+        }
+
+        .register-heading h2 {
+            font-size: 29px;
+        }
+
+        .register-row {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+    }
+</style>
+
+
+<section class="register-page">
+
+    <div class="register-shell">
+
+        <!-- LEFT SHOWCASE -->
+        <div class="register-showcase">
+
+            <div class="register-orb"></div>
+
+            <div class="register-brand">
+
+                <div class="register-logo">
+
+                    {% if store.logo %}
+                        <img
+                            src="{{ url_for('uploaded_file', filename=store.logo) }}"
+                            alt="{{ store.store_name }}"
+                            style="width:100%;height:100%;object-fit:contain;"
+                        >
+                    {% else %}
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    {% endif %}
+
+                </div>
+
+                <span>{{ store.store_name }}</span>
+
+            </div>
+
+
+            <div class="register-main-copy">
+
+                <span class="badge">
+                    <i class="fa-solid fa-sparkles"></i>
+                    Start your journey
+                </span>
+
+                <h1>
+                    Your shopping<br>
+                    starts here.
+                </h1>
+
+                <p>
+                    Create your account and enjoy a smoother,
+                    smarter and more convenient way to shop online.
+                </p>
+
+            </div>
+
+
+            <div class="register-features">
+
+                <div class="register-feature">
+                    <span class="register-feature-icon">
+                        <i class="fa-solid fa-user-check"></i>
+                    </span>
+                    <span>Simple and secure account</span>
+                </div>
+
+                <div class="register-feature">
+                    <span class="register-feature-icon">
+                        <i class="fa-solid fa-box-open"></i>
+                    </span>
+                    <span>Keep track of your orders</span>
+                </div>
+
+                <div class="register-feature">
+                    <span class="register-feature-icon">
+                        <i class="fa-solid fa-heart"></i>
+                    </span>
+                    <span>Enjoy a better shopping experience</span>
+                </div>
+
+            </div>
+
         </div>
-      </div>
-      <div class="showcase-bottom"><span>Free account</span><span>•</span><span>Simple checkout</span><span>•</span><span>Order tracking</span></div>
+
+
+        <!-- FORM -->
+        <div class="register-form-area">
+
+            <div class="register-form-box">
+
+                <div class="register-heading">
+
+                    <span class="eyebrow">
+                        New customer
+                    </span>
+
+                    <h2>Create your account</h2>
+
+                    <p>
+                        Fill in your details below to get started.
+                    </p>
+
+                </div>
+
+
+                <form method="POST" id="registerForm">
+
+                    <!-- NAME -->
+                    <div class="register-group">
+
+                        <label for="name">
+                            Full name
+                        </label>
+
+                        <div class="register-input-wrap">
+
+                            <i class="fa-solid fa-user register-input-icon"></i>
+
+                            <input
+                                class="register-input"
+                                type="text"
+                                id="name"
+                                name="name"
+                                placeholder="Enter your full name"
+                                autocomplete="name"
+                                minlength="2"
+                                maxlength="100"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- EMAIL -->
+                    <div class="register-group">
+
+                        <label for="email">
+                            Email address
+                        </label>
+
+                        <div class="register-input-wrap">
+
+                            <i class="fa-solid fa-envelope register-input-icon"></i>
+
+                            <input
+                                class="register-input"
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="you@example.com"
+                                autocomplete="email"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PASSWORD ROW -->
+                    <div class="register-row">
+
+                        <!-- PASSWORD -->
+                        <div class="register-group">
+
+                            <label for="password">
+                                Password
+                            </label>
+
+                            <div class="register-input-wrap">
+
+                                <i class="fa-solid fa-lock register-input-icon"></i>
+
+                                <input
+                                    class="register-input"
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="Create password"
+                                    autocomplete="new-password"
+                                    minlength="8"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="register-password-toggle"
+                                    data-target="password"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CONFIRM -->
+                        <div class="register-group">
+
+                            <label for="confirm_password">
+                                Confirm password
+                            </label>
+
+                            <div class="register-input-wrap">
+
+                                <i class="fa-solid fa-lock register-input-icon"></i>
+
+                                <input
+                                    class="register-input"
+                                    type="password"
+                                    id="confirm_password"
+                                    name="confirm_password"
+                                    placeholder="Repeat password"
+                                    autocomplete="new-password"
+                                    minlength="8"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="register-password-toggle"
+                                    data-target="confirm_password"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="password-hint">
+                        Password must contain at least 8 characters.
+                    </div>
+
+
+                    <div class="password-strength" id="passwordStrength">
+
+                        <span class="strength-bar"></span>
+                        <span class="strength-bar"></span>
+                        <span class="strength-bar"></span>
+                        <span class="strength-bar"></span>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="register-submit"
+                        id="registerButton"
+                    >
+
+                        <span class="register-button-text">
+                            Create Account
+                        </span>
+
+                        <span
+                            class="register-loading"
+                            style="display:none;"
+                        >
+                            <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            Creating account...
+                        </span>
+
+                    </button>
+
+                </form>
+
+
+                <div class="register-footer">
+
+                    Already have an account?
+
+                    <a href="{{ url_for('login') }}">
+                        Sign in
+                    </a>
+
+                </div>
+
+
+                <div class="register-security">
+
+                    <i class="fa-solid fa-shield-halved"></i>
+
+                    Your information is kept secure.
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
-    <div class="auth-modern-card">
-      <div class="auth-card-top"><span class="auth-mini-icon"><i class="fa-solid fa-user-plus"></i></span><a href="{{ url_for('index') }}"><i class="fa-solid fa-arrow-left"></i> Store</a></div>
-      <span class="eyebrow">GET STARTED</span><h1>Create your account</h1><p class="auth-lead">It only takes a moment. Your account makes future shopping easier.</p>
-      <form method="post" class="auth-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label><span>Full name</span><div class="input-wrap modern-input"><i class="fa-regular fa-user"></i><input name="name" required maxlength="100" autocomplete="name" placeholder="Your full name"></div></label>
-        <label><span>Email address</span><div class="input-wrap modern-input"><i class="fa-regular fa-envelope"></i><input type="email" name="email" required autocomplete="email" placeholder="you@example.com"></div></label>
-        <label><span>Password</span><div class="input-wrap modern-input"><i class="fa-solid fa-lock"></i><input id="registerPassword" type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="password-toggle" data-password-toggle="registerPassword" aria-label="Show password"><i class="fa-regular fa-eye"></i></button></div></label>
-        <label><span>Confirm password</span><div class="input-wrap modern-input"><i class="fa-solid fa-check-double"></i><input id="confirmPassword" type="password" name="confirm_password" required minlength="8" autocomplete="new-password" placeholder="Repeat your password"><button type="button" class="password-toggle" data-password-toggle="confirmPassword" aria-label="Show password"><i class="fa-regular fa-eye"></i></button></div></label>
-        <button class="btn primary auth-submit modern-submit" type="submit"><i class="fa-solid fa-rocket"></i> Create my account</button>
-      </form>
-      <p class="auth-foot">Already have an account? <a href="{{ url_for('login') }}">Sign in <i class="fa-solid fa-arrow-right"></i></a></p>
-    </div>
-  </div>
+
 </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* ==============================
+       PASSWORD SHOW / HIDE
+       ============================== */
+
+    document
+        .querySelectorAll(".register-password-toggle")
+        .forEach(function (button) {
+
+            button.addEventListener("click", function () {
+
+                const targetId =
+                    button.getAttribute("data-target");
+
+                const input =
+                    document.getElementById(targetId);
+
+                const icon =
+                    button.querySelector("i");
+
+                if (!input) return;
+
+                const hidden =
+                    input.type === "password";
+
+                input.type =
+                    hidden ? "text" : "password";
+
+                icon.classList.toggle(
+                    "fa-eye",
+                    !hidden
+                );
+
+                icon.classList.toggle(
+                    "fa-eye-slash",
+                    hidden
+                );
+
+                button.setAttribute(
+                    "aria-label",
+                    hidden
+                        ? "Hide password"
+                        : "Show password"
+                );
+
+                button.setAttribute(
+                    "aria-pressed",
+                    hidden ? "true" : "false"
+                );
+
+                input.focus();
+
+            });
+
+        });
+
+
+    /* ==============================
+       PASSWORD STRENGTH
+       ============================== */
+
+    const password =
+        document.getElementById("password");
+
+    const bars =
+        document.querySelectorAll(".strength-bar");
+
+    if (password) {
+
+        password.addEventListener(
+            "input",
+            function () {
+
+                const value = password.value;
+
+                let score = 0;
+
+                if (value.length >= 8)
+                    score++;
+
+                if (/[A-Z]/.test(value))
+                    score++;
+
+                if (/[0-9]/.test(value))
+                    score++;
+
+                if (/[^A-Za-z0-9]/.test(value))
+                    score++;
+
+                bars.forEach(function (bar, index) {
+
+                    bar.style.background =
+                        index < score
+                            ? "#6d4aff"
+                            : "#e8e8ed";
+
+                });
+
+            }
+        );
+
+    }
+
+
+    /* ==============================
+       PASSWORD MATCH CHECK
+       ============================== */
+
+    const confirmPassword =
+        document.getElementById("confirm_password");
+
+    if (confirmPassword) {
+
+        confirmPassword.addEventListener(
+            "input",
+            function () {
+
+                if (!confirmPassword.value) {
+                    confirmPassword.style.borderColor = "";
+                    return;
+                }
+
+                if (
+                    password.value ===
+                    confirmPassword.value
+                ) {
+
+                    confirmPassword.style.borderColor =
+                        "#35a66f";
+
+                } else {
+
+                    confirmPassword.style.borderColor =
+                        "#e05b5b";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ==============================
+       SUBMIT LOADING STATE
+       ============================== */
+
+    const form =
+        document.getElementById("registerForm");
+
+    const button =
+        document.getElementById("registerButton");
+
+    if (form && button) {
+
+        form.addEventListener(
+            "submit",
+            function () {
+
+                button.classList.add("loading");
+
+                const text =
+                    button.querySelector(
+                        ".register-button-text"
+                    );
+
+                const loading =
+                    button.querySelector(
+                        ".register-loading"
+                    );
+
+                if (text)
+                    text.style.display = "none";
+
+                if (loading)
+                    loading.style.display =
+                        "inline-flex";
+
+            }
+        );
+
+    }
+
+});
+</script>
+
 {% endblock %}
