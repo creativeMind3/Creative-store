@@ -1,23 +1,2376 @@
-{% extends 'base.html' %}{% block title %}{{ store.store_name }} — Shop with confidence{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ store.store_name }} — Shop Online
+{% endblock %}
+
 {% block content %}
-<section class="hero hero-premium"><div class="container hero-inner"><div class="hero-copy"><span class="eyebrow"><i class="fa-solid fa-sparkles"></i> SMART SHOPPING • QUALITY PRODUCTS</span><h1>Everything you need.<br><span>All in one place.</span></h1><p>Discover accessories, electronics, lifestyle essentials and more through a clean, modern shopping experience built around you.</p><div class="hero-actions"><a class="btn primary" href="{{ url_for('shop') }}"><i class="fa-solid fa-bag-shopping"></i> Shop now</a><a class="btn ghost" href="{{ url_for('categories') }}"><i class="fa-solid fa-compass"></i> Explore categories</a></div><div class="hero-trust"><span><i class="fa-solid fa-circle-check"></i> Quality products</span><span><i class="fa-solid fa-lock"></i> Secure account</span><span><i class="fa-solid fa-headset"></i> Friendly support</span></div></div><div class="hero-visual"><div class="visual-glow"></div><div class="floating-card card-one"><i class="fa-solid fa-bag-shopping"></i><div><b>Easy shopping</b><small>Everything in one place</small></div></div><div class="visual-center"><span class="visual-icon"><i class="fa-solid fa-store"></i></span><strong>{{ store.store_name }}</strong><small>Simple • Modern • Reliable</small></div><div class="floating-card card-two"><i class="fa-solid fa-truck-fast"></i><div><b>Easy delivery</b><small>Share details on WhatsApp</small></div></div></div></div></section>
 
-<section class="quick-benefits"><div class="container quick-benefits-grid">
-  <div class="quick-benefit"><span><i class="fa-solid fa-shield-heart"></i></span><div><strong>Shop with confidence</strong><small>Clear prices & product details</small></div></div>
-  <div class="quick-benefit"><span><i class="fa-solid fa-truck-fast"></i></span><div><strong>Simple delivery</strong><small>Easy order & delivery process</small></div></div>
-  <div class="quick-benefit"><span><i class="fa-solid fa-headset"></i></span><div><strong>Friendly support</strong><small>We are here when you need us</small></div></div>
-  <div class="quick-benefit"><span><i class="fa-brands fa-whatsapp"></i></span><div><strong>WhatsApp support</strong><small>Fast communication when enabled</small></div></div>
-</div></section>
+<style>
 
-<section class="section section-tight"><div class="container"><div class="section-head"><div><span class="eyebrow">CURATED FOR YOU</span><h2>Featured products</h2><p>Fresh picks selected from the store.</p></div><a href="{{ url_for('shop') }}">View all <i class="fa-solid fa-arrow-right"></i></a></div><div class="product-grid">{% for p in featured %}{% include '_product_card.html' %}{% else %}<div class="empty full">No products yet. Add your first product from the admin dashboard.</div>{% endfor %}</div></div></section>
+/* =========================================================
+   STORE HOMEPAGE
+========================================================= */
 
-<section class="section categories-section"><div class="container"><div class="section-head"><div><span class="eyebrow">SHOP BY TYPE</span><h2>Popular categories</h2><p>Find what you need faster.</p></div><a href="{{ url_for('categories') }}">All categories <i class="fa-solid fa-arrow-right"></i></a></div><div class="category-grid category-grid-premium">{% for c in categories %}{% set lc=c|lower %}<a class="category-card category-card-premium" href="{{ url_for('shop', category=c) }}"><span class="category-icon">{% if 'phone' in lc %}<i class="fa-solid fa-mobile-screen-button"></i>{% elif 'watch' in lc %}<i class="fa-solid fa-clock"></i>{% elif 'bag' in lc %}<i class="fa-solid fa-bag-shopping"></i>{% elif 'jewel' in lc %}<i class="fa-regular fa-gem"></i>{% elif 'audio' in lc %}<i class="fa-solid fa-headphones"></i>{% elif 'elect' in lc %}<i class="fa-solid fa-bolt"></i>{% elif 'life' in lc %}<i class="fa-solid fa-heart"></i>{% else %}<i class="fa-solid fa-cubes"></i>{% endif %}</span><div><small>COLLECTION</small><h3>{{ c }}</h3><p>Explore collection <i class="fa-solid fa-arrow-right"></i></p></div><span class="category-arrow"><i class="fa-solid fa-chevron-right"></i></span></a>{% endfor %}</div></div></section>
+.home-page {
+    background: #f8f7fb;
+    overflow: hidden;
+}
 
-<section class="section section-tight"><div class="container"><div class="section-head"><div><span class="eyebrow">CUSTOMER FAVOURITES</span><h2>Popular products</h2><p>Products customers keep coming back for.</p></div></div><div class="product-grid">{% for p in popular %}{% include '_product_card.html' %}{% else %}<div class="empty full">Popular products will appear here as orders come in.</div>{% endfor %}</div></div></section>
+.home-container {
+    width: min(1220px, calc(100% - 32px));
+    margin: 0 auto;
+}
 
-<section class="why-section" id="about"><div class="container"><div class="why-heading"><span class="eyebrow">WHY SHOP WITH US</span><h2>A better way to shop online.</h2><p>We keep the experience simple, clear and customer-friendly from browsing to delivery.</p></div><div class="features features-premium"><div class="feature-card"><span class="feature-icon"><i class="fa-solid fa-shield-halved"></i></span><b>01</b><h3>Shop with confidence</h3><p>Clear product information, visible prices and stock details help you make informed choices.</p><a href="{{ url_for('shop') }}">Browse products <i class="fa-solid fa-arrow-right"></i></a></div><div class="feature-card featured"><span class="feature-icon"><i class="fa-solid fa-cart-shopping"></i></span><b>02</b><h3>Simple checkout</h3><p>Add your favourites to cart, review everything and submit your delivery details in just a few steps.</p><a href="{{ url_for('cart') }}">View cart <i class="fa-solid fa-arrow-right"></i></a></div><div class="feature-card"><span class="feature-icon"><i class="fa-brands fa-whatsapp"></i></span><b>03</b><h3>Easy delivery support</h3><p>When enabled, you can quickly share delivery details with the store through WhatsApp.</p>{% if store.show_whatsapp == '1' and whatsapp_url %}<a href="{{ whatsapp_url }}" target="_blank" rel="noopener">Chat with us <i class="fa-solid fa-arrow-right"></i></a>{% endif %}</div></div></div></section>
 
-<section class="offer offer-premium"><div class="container offer-inner"><div><span class="eyebrow">READY WHEN YOU ARE</span><h2>Find something you’ll love.</h2><p>Explore the latest products and discover your next favourite.</p></div><a class="btn light" href="{{ url_for('shop') }}"><i class="fa-solid fa-arrow-right"></i> Start shopping</a></div></section>
+/* =========================================================
+   HERO
+========================================================= */
 
-<section class="newsletter"><div class="container newsletter-inner"><div class="newsletter-icon"><i class="fa-regular fa-envelope"></i></div><div><span class="eyebrow">STAY IN THE LOOP</span><h2>Get updates from {{ store.store_name }}</h2><p>Keep up with new products and store updates.</p></div><form onsubmit="event.preventDefault(); alert('Newsletter signup is ready for your email provider integration.');"><input type="email" placeholder="Enter your email address" required><button class="btn primary"><i class="fa-solid fa-paper-plane"></i> Subscribe</button></form></div></section>
+.hero-section {
+    padding: 25px 0 18px;
+}
+
+.hero-box {
+    position: relative;
+    min-height: 430px;
+
+    overflow: hidden;
+
+    border-radius: 30px;
+
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(154,123,255,.45),
+            transparent 28%
+        ),
+        linear-gradient(
+            135deg,
+            #171321 0%,
+            #342157 48%,
+            var(--primary) 100%
+        );
+
+    box-shadow:
+        0 22px 60px rgba(46,29,82,.20);
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+}
+
+.hero-glow {
+    position: absolute;
+
+    width: 330px;
+    height: 330px;
+
+    right: -80px;
+    bottom: -130px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.08);
+
+    filter: blur(2px);
+}
+
+.hero-shape {
+    position: absolute;
+
+    width: 150px;
+    height: 150px;
+
+    right: 29%;
+    top: -60px;
+
+    border-radius: 40px;
+
+    border:
+        1px solid rgba(255,255,255,.10);
+
+    transform: rotate(25deg);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+
+    width: 60%;
+
+    padding: 48px;
+}
+
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 12px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.11);
+
+    border:
+        1px solid rgba(255,255,255,.12);
+
+    color: rgba(255,255,255,.88);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+}
+
+.hero-eyebrow i {
+    color: #d7caff;
+}
+
+.hero-title {
+    margin: 18px 0 12px;
+
+    max-width: 650px;
+
+    font-family:
+        "Plus Jakarta Sans",
+        sans-serif;
+
+    font-size:
+        clamp(38px, 5vw, 68px);
+
+    line-height: 1.02;
+
+    letter-spacing: -2.5px;
+
+    color: white;
+}
+
+.hero-title span {
+    color: #d9ceff;
+}
+
+.hero-description {
+    max-width: 540px;
+
+    margin: 0;
+
+    color:
+        rgba(255,255,255,.76);
+
+    font-size: 14px;
+
+    line-height: 1.75;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    margin-top: 27px;
+
+    flex-wrap: wrap;
+}
+
+.hero-btn {
+    min-height: 50px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    padding: 0 19px;
+
+    border-radius: 14px;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.hero-btn:hover {
+    transform: translateY(-3px);
+}
+
+.hero-btn.primary {
+    background: white;
+
+    color: #35205e;
+
+    box-shadow:
+        0 12px 30px rgba(0,0,0,.18);
+}
+
+.hero-btn.secondary {
+    color: white;
+
+    background:
+        rgba(255,255,255,.10);
+
+    border:
+        1px solid rgba(255,255,255,.18);
+}
+
+
+/* Hero decorative shopping visual */
+
+.hero-visual {
+    position: absolute;
+
+    right: 6%;
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    width: 340px;
+    height: 340px;
+
+    z-index: 1;
+}
+
+.hero-circle {
+    position: absolute;
+
+    inset: 25px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.09);
+
+    border:
+        1px solid rgba(255,255,255,.12);
+}
+
+.hero-bag {
+    position: absolute;
+
+    width: 175px;
+    height: 195px;
+
+    left: 82px;
+    top: 70px;
+
+    border-radius:
+        20px 20px 30px 30px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fff,
+            #e8e2ff
+        );
+
+    transform:
+        rotate(-7deg);
+
+    box-shadow:
+        0 30px 55px rgba(17,10,31,.30);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--primary);
+
+    font-size: 58px;
+}
+
+.hero-bag:before {
+    content: "";
+
+    position: absolute;
+
+    width: 78px;
+    height: 48px;
+
+    top: -30px;
+
+    border:
+        8px solid #eeeaff;
+
+    border-bottom: 0;
+
+    border-radius:
+        50px 50px 0 0;
+}
+
+.hero-floating-card {
+    position: absolute;
+
+    right: -3px;
+    bottom: 48px;
+
+    padding: 13px 15px;
+
+    border-radius: 15px;
+
+    background: white;
+
+    color: #21182e;
+
+    box-shadow:
+        0 15px 35px rgba(0,0,0,.18);
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.hero-floating-card i {
+    color: var(--primary);
+    margin-right: 5px;
+}
+
+
+/* =========================================================
+   TRUST STRIP
+========================================================= */
+
+.trust-strip {
+    margin-top: 17px;
+
+    background: white;
+
+    border:
+        1px solid #ece9f1;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 8px 25px rgba(30,20,50,.04);
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+}
+
+.trust-item {
+    min-height: 86px;
+
+    padding: 14px 18px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    border-right:
+        1px solid #eeeaf2;
+}
+
+.trust-item:last-child {
+    border-right: 0;
+}
+
+.trust-icon {
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    border-radius: 13px;
+
+    display: grid;
+    place-items: center;
+
+    background:
+        #f1edff;
+
+    color: var(--primary);
+
+    font-size: 15px;
+}
+
+.trust-item strong {
+    display: block;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.trust-item span {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #8b8592;
+
+    font-size: 9px;
+}
+
+
+/* =========================================================
+   SECTION HEADERS
+========================================================= */
+
+.home-section {
+    padding-top: 52px;
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 18px;
+}
+
+.section-heading-left small {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--primary);
+
+    font-size: 9px;
+    font-weight: 900;
+
+    letter-spacing: 1.4px;
+
+    text-transform: uppercase;
+}
+
+.section-heading h2 {
+    margin: 0;
+
+    font-family:
+        "Plus Jakarta Sans",
+        sans-serif;
+
+    font-size:
+        clamp(21px, 3vw, 29px);
+
+    letter-spacing: -.8px;
+}
+
+.section-heading p {
+    margin: 6px 0 0;
+
+    color: #88818f;
+
+    font-size: 11px;
+}
+
+.view-all {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 7px;
+
+    color: var(--primary);
+
+    font-size: 11px;
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    transition:
+        gap .2s ease;
+}
+
+.view-all:hover {
+    gap: 11px;
+}
+
+
+/* =========================================================
+   CATEGORY CARDS
+========================================================= */
+
+.category-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(8, minmax(0, 1fr));
+
+    gap: 10px;
+}
+
+.category-card {
+    position: relative;
+
+    min-height: 120px;
+
+    padding: 15px 10px;
+
+    background: white;
+
+    border:
+        1px solid #ece9f1;
+
+    border-radius: 17px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    transition:
+        transform .22s ease,
+        box-shadow .22s ease,
+        border-color .22s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+
+    border-color:
+        #ddd4ff;
+
+    box-shadow:
+        0 14px 32px rgba(55,37,92,.10);
+}
+
+.category-icon {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 14px;
+
+    display: grid;
+    place-items: center;
+
+    background:
+        #f2efff;
+
+    color: var(--primary);
+
+    font-size: 16px;
+
+    margin-bottom: 9px;
+}
+
+.category-card strong {
+    font-size: 10px;
+
+    line-height: 1.3;
+}
+
+.category-card span {
+    margin-top: 4px;
+
+    color: #99929f;
+
+    font-size: 8px;
+}
+
+
+/* =========================================================
+   PRODUCTS
+========================================================= */
+
+.product-layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        285px;
+
+    gap: 18px;
+}
+
+.products-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 14px;
+}
+
+.product-card {
+    position: relative;
+
+    overflow: hidden;
+
+    background: white;
+
+    border:
+        1px solid #ece9f1;
+
+    border-radius: 19px;
+
+    transition:
+        transform .22s ease,
+        box-shadow .22s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+
+    box-shadow:
+        0 17px 38px rgba(40,26,70,.10);
+}
+
+.product-image-wrap {
+    position: relative;
+
+    height: 205px;
+
+    padding: 10px;
+
+    background:
+        #f5f3f8;
+
+    overflow: hidden;
+}
+
+.product-image-wrap img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 13px;
+
+    transition:
+        transform .35s ease;
+}
+
+.product-card:hover
+.product-image-wrap img {
+    transform: scale(1.05);
+}
+
+.product-image-placeholder {
+    width: 100%;
+    height: 100%;
+
+    border-radius: 13px;
+
+    display: grid;
+    place-items: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f2effa,
+            #e8e2f5
+        );
+
+    color: #a097ad;
+
+    font-size: 34px;
+}
+
+.product-badge {
+    position: absolute;
+
+    left: 18px;
+    top: 18px;
+
+    padding: 6px 8px;
+
+    border-radius: 8px;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-size: 8px;
+    font-weight: 900;
+
+    text-transform: uppercase;
+}
+
+.product-badge.hot {
+    background: #e84f62;
+}
+
+.product-info {
+    padding: 14px;
+}
+
+.product-category {
+    color: var(--primary);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: .7px;
+}
+
+.product-name {
+    margin: 5px 0 9px;
+
+    min-height: 34px;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    line-height: 1.4;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+}
+
+.product-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+}
+
+.product-price {
+    color: #241a31;
+
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.product-cart {
+    width: 36px;
+    height: 36px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 11px;
+
+    background:
+        #f0ecff;
+
+    color: var(--primary);
+
+    transition:
+        background .2s ease,
+        color .2s ease,
+        transform .2s ease;
+}
+
+.product-cart:hover {
+    background: var(--primary);
+    color: white;
+
+    transform: scale(1.08);
+}
+
+.product-empty {
+    grid-column: 1 / -1;
+
+    padding: 50px 20px;
+
+    text-align: center;
+
+    background: white;
+
+    border:
+        1px dashed #ddd7e8;
+
+    border-radius: 20px;
+
+    color: #8d8794;
+}
+
+.product-empty i {
+    display: block;
+
+    margin-bottom: 10px;
+
+    font-size: 28px;
+
+    color: #b0a8bd;
+}
+
+
+/* =========================================================
+   SPECIAL OFFER
+========================================================= */
+
+.offer-card {
+    position: relative;
+
+    min-height: 100%;
+
+    overflow: hidden;
+
+    padding: 25px;
+
+    border-radius: 23px;
+
+    color: white;
+
+    background:
+        radial-gradient(
+            circle at 90% 85%,
+            rgba(255,255,255,.18),
+            transparent 30%
+        ),
+        linear-gradient(
+            145deg,
+            #24183b,
+            var(--primary)
+        );
+
+    box-shadow:
+        0 16px 40px rgba(71,44,130,.16);
+}
+
+.offer-card:after {
+    content: "%";
+
+    position: absolute;
+
+    right: -15px;
+    bottom: -35px;
+
+    font-size: 145px;
+
+    font-weight: 900;
+
+    color:
+        rgba(255,255,255,.08);
+
+    transform: rotate(-12deg);
+}
+
+.offer-eyebrow {
+    color:
+        rgba(255,255,255,.70);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 1.4px;
+
+    text-transform: uppercase;
+}
+
+.offer-card h3 {
+    position: relative;
+    z-index: 2;
+
+    margin: 9px 0 8px;
+
+    font-family:
+        "Plus Jakarta Sans",
+        sans-serif;
+
+    font-size: 26px;
+
+    line-height: 1.08;
+}
+
+.offer-card p {
+    position: relative;
+    z-index: 2;
+
+    color:
+        rgba(255,255,255,.73);
+
+    font-size: 10px;
+
+    line-height: 1.6;
+}
+
+.offer-btn {
+    position: relative;
+    z-index: 3;
+
+    margin-top: 14px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 11px 14px;
+
+    border-radius: 11px;
+
+    background: white;
+
+    color: #36205d;
+
+    font-size: 10px;
+    font-weight: 900;
+}
+
+
+/* =========================================================
+   WHY CHOOSE US
+========================================================= */
+
+.features-area {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 18px;
+}
+
+.feature-panel {
+    padding: 23px;
+
+    border-radius: 22px;
+
+    background: white;
+
+    border:
+        1px solid #ece9f1;
+}
+
+.feature-panel h3 {
+    margin: 0 0 17px;
+
+    font-family:
+        "Plus Jakarta Sans",
+        sans-serif;
+
+    font-size: 19px;
+}
+
+.feature-list {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 10px;
+}
+
+.feature-item {
+    padding: 14px;
+
+    border-radius: 15px;
+
+    background: #faf9fc;
+
+    display: flex;
+    gap: 10px;
+}
+
+.feature-item-icon {
+    width: 34px;
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    border-radius: 10px;
+
+    display: grid;
+    place-items: center;
+
+    background: #eee9ff;
+
+    color: var(--primary);
+
+    font-size: 12px;
+}
+
+.feature-item strong {
+    display: block;
+
+    font-size: 10px;
+}
+
+.feature-item span {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #918a98;
+
+    font-size: 8px;
+
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   TESTIMONIALS
+========================================================= */
+
+.testimonials {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 11px;
+}
+
+.testimonial {
+    padding: 17px;
+
+    border-radius: 17px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #faf9ff,
+            #fff
+        );
+
+    border:
+        1px solid #ece9f1;
+}
+
+.stars {
+    color: #f3a928;
+
+    font-size: 10px;
+
+    letter-spacing: 1px;
+}
+
+.testimonial p {
+    margin: 11px 0 15px;
+
+    color: #625c68;
+
+    font-size: 10px;
+
+    line-height: 1.65;
+}
+
+.customer {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+.customer-avatar {
+    width: 32px;
+    height: 32px;
+
+    border-radius: 10px;
+
+    display: grid;
+    place-items: center;
+
+    background:
+        #eae3ff;
+
+    color: var(--primary);
+
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.customer strong {
+    display: block;
+
+    font-size: 9px;
+}
+
+.customer span {
+    display: block;
+
+    margin-top: 2px;
+
+    color: #99929f;
+
+    font-size: 8px;
+}
+
+
+/* =========================================================
+   NEWSLETTER
+========================================================= */
+
+.newsletter {
+    margin-top: 50px;
+    margin-bottom: 45px;
+
+    padding: 28px;
+
+    border-radius: 23px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #eee8ff,
+            #f8f5ff
+        );
+
+    border:
+        1px solid #ded4ff;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 25px;
+}
+
+.newsletter-copy {
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+}
+
+.newsletter-icon {
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    border-radius: 14px;
+
+    display: grid;
+    place-items: center;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-size: 17px;
+}
+
+.newsletter-copy h3 {
+    margin: 0;
+
+    font-size: 17px;
+}
+
+.newsletter-copy p {
+    margin: 5px 0 0;
+
+    color: #81798d;
+
+    font-size: 10px;
+}
+
+.newsletter-form {
+    display: flex;
+
+    width: min(430px, 100%);
+
+    padding: 5px;
+
+    border-radius: 14px;
+
+    background: white;
+
+    border:
+        1px solid #ddd6ec;
+}
+
+.newsletter-form input {
+    min-width: 0;
+
+    flex: 1;
+
+    border: 0;
+    outline: 0;
+
+    padding: 0 12px;
+
+    background: transparent;
+
+    font-size: 11px;
+}
+
+.newsletter-form button {
+    border: 0;
+
+    min-height: 40px;
+
+    padding: 0 15px;
+
+    border-radius: 10px;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1050px) {
+
+    .hero-content {
+        width: 65%;
+    }
+
+    .hero-visual {
+        right: 1%;
+        transform:
+            translateY(-50%)
+            scale(.82);
+    }
+
+    .category-grid {
+        grid-template-columns:
+            repeat(4, 1fr);
+    }
+
+    .products-grid {
+        grid-template-columns:
+            repeat(3, 1fr);
+    }
+
+    .product-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .offer-card {
+        min-height: 230px;
+    }
+
+}
+
+
+@media (max-width: 760px) {
+
+    .home-container {
+        width:
+            calc(100% - 22px);
+    }
+
+    .hero-section {
+        padding-top: 14px;
+    }
+
+    .hero-box {
+        min-height: 570px;
+
+        border-radius: 23px;
+
+        align-items: flex-start;
+    }
+
+    .hero-content {
+        width: 100%;
+
+        padding: 32px 23px;
+    }
+
+    .hero-title {
+        font-size: 40px;
+
+        letter-spacing: -1.7px;
+    }
+
+    .hero-description {
+        font-size: 12px;
+    }
+
+    .hero-visual {
+        top: auto;
+        bottom: -35px;
+
+        right: 50%;
+
+        transform:
+            translateX(50%)
+            scale(.64);
+    }
+
+    .trust-strip {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .trust-item {
+        border-bottom:
+            1px solid #eeeaf2;
+    }
+
+    .trust-item:nth-child(2) {
+        border-right: 0;
+    }
+
+    .trust-item:nth-child(3),
+    .trust-item:nth-child(4) {
+        border-bottom: 0;
+    }
+
+    .category-grid {
+        grid-template-columns:
+            repeat(4, 1fr);
+    }
+
+    .products-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+
+        gap: 10px;
+    }
+
+    .product-image-wrap {
+        height: 165px;
+    }
+
+    .features-area {
+        grid-template-columns: 1fr;
+    }
+
+    .newsletter {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .newsletter-form {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .hero-box {
+        min-height: 555px;
+    }
+
+    .hero-title {
+        font-size: 34px;
+    }
+
+    .hero-actions {
+        width: 100%;
+    }
+
+    .hero-btn {
+        flex: 1;
+    }
+
+    .trust-item {
+        padding: 12px;
+    }
+
+    .trust-icon {
+        width: 37px;
+        height: 37px;
+        flex-basis: 37px;
+    }
+
+    .trust-item strong {
+        font-size: 9px;
+    }
+
+    .trust-item span {
+        font-size: 7px;
+    }
+
+    .category-card {
+        min-height: 105px;
+    }
+
+    .category-icon {
+        width: 39px;
+        height: 39px;
+    }
+
+    .category-card strong {
+        font-size: 8px;
+    }
+
+    .product-image-wrap {
+        height: 145px;
+    }
+
+    .product-info {
+        padding: 11px;
+    }
+
+    .product-name {
+        font-size: 10px;
+    }
+
+    .product-price {
+        font-size: 12px;
+    }
+
+    .product-cart {
+        width: 32px;
+        height: 32px;
+    }
+
+    .feature-list {
+        grid-template-columns: 1fr;
+    }
+
+    .testimonials {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+/* =========================================================
+   SIMPLE REVEAL ANIMATION
+========================================================= */
+
+.reveal {
+    opacity: 0;
+
+    transform:
+        translateY(18px);
+
+    animation:
+        revealUp .65s ease forwards;
+}
+
+.reveal-delay-1 {
+    animation-delay: .08s;
+}
+
+.reveal-delay-2 {
+    animation-delay: .16s;
+}
+
+.reveal-delay-3 {
+    animation-delay: .24s;
+}
+
+@keyframes revealUp {
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+
+}
+
+</style>
+
+
+<div class="home-page">
+
+    <div class="home-container">
+
+
+        <!-- =================================================
+             HERO
+        ================================================= -->
+
+        <section class="hero-section">
+
+            <div class="hero-box reveal">
+
+                <div class="hero-glow"></div>
+                <div class="hero-shape"></div>
+
+
+                <div class="hero-content">
+
+                    <div class="hero-eyebrow">
+                        <i class="fa-solid fa-sparkles"></i>
+                        Welcome to {{ store.store_name }}
+                    </div>
+
+
+                    <h1 class="hero-title">
+                        Discover.
+                        <span>Shop.</span>
+                        Enjoy.
+                    </h1>
+
+
+                    <p class="hero-description">
+
+                        Find products you love at prices you'll appreciate.
+                        Browse our latest collection and enjoy a simple,
+                        secure shopping experience.
+
+                    </p>
+
+
+                    <div class="hero-actions">
+
+                        <a
+                            href="{{ url_for('shop') }}"
+                            class="hero-btn primary"
+                        >
+                            <i class="fa-solid fa-bag-shopping"></i>
+                            Shop Now
+                        </a>
+
+
+                        <a
+                            href="{{ url_for('categories') }}"
+                            class="hero-btn secondary"
+                        >
+                            Explore Categories
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+
+                </div>
+
+
+                <div class="hero-visual">
+
+                    <div class="hero-circle"></div>
+
+                    <div class="hero-bag">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </div>
+
+                    <div class="hero-floating-card">
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+                        Quality shopping
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             TRUST
+        ================================================= -->
+
+        <section class="trust-strip reveal reveal-delay-1">
+
+            <div class="trust-item">
+
+                <div class="trust-icon">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+
+                <div>
+                    <strong>Fast Delivery</strong>
+                    <span>Delivered to your doorstep</span>
+                </div>
+
+            </div>
+
+
+            <div class="trust-item">
+
+                <div class="trust-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+
+                <div>
+                    <strong>Secure Shopping</strong>
+                    <span>Your information stays protected</span>
+                </div>
+
+            </div>
+
+
+            <div class="trust-item">
+
+                <div class="trust-icon">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+
+                <div>
+                    <strong>Quality Products</strong>
+                    <span>Products selected with care</span>
+                </div>
+
+            </div>
+
+
+            <div class="trust-item">
+
+                <div class="trust-icon">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+
+                <div>
+                    <strong>Customer Support</strong>
+                    <span>We're here when you need us</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             CATEGORIES
+        ================================================= -->
+
+        <section class="home-section">
+
+            <div class="section-heading">
+
+                <div class="section-heading-left">
+
+                    <small>
+                        Explore
+                    </small>
+
+                    <h2>
+                        Shop by Category
+                    </h2>
+
+                    <p>
+                        Find exactly what you're looking for.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="{{ url_for('categories') }}"
+                    class="view-all"
+                >
+                    View all
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+
+            <div class="category-grid">
+
+                {% set category_icons = [
+                    'fa-mobile-screen-button',
+                    'fa-clock',
+                    'fa-bag-shopping',
+                    'fa-gem',
+                    'fa-headphones',
+                    'fa-laptop',
+                    'fa-heart',
+                    'fa-ellipsis'
+                ] %}
+
+
+                {% for category in categories[:8] %}
+
+                    <a
+                        href="{{ url_for('shop', category=category) }}"
+                        class="category-card"
+                    >
+
+                        <div class="category-icon">
+
+                            <i
+                                class="fa-solid {{ category_icons[loop.index0 % category_icons|length] }}"
+                            ></i>
+
+                        </div>
+
+
+                        <strong>
+                            {{ category }}
+                        </strong>
+
+
+                        <span>
+                            Explore →
+                        </span>
+
+                    </a>
+
+                {% else %}
+
+                    <a
+                        href="{{ url_for('shop') }}"
+                        class="category-card"
+                    >
+
+                        <div class="category-icon">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+
+                        <strong>
+                            All Products
+                        </strong>
+
+                        <span>
+                            Shop now →
+                        </span>
+
+                    </a>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             FEATURED PRODUCTS
+        ================================================= -->
+
+        <section class="home-section">
+
+            <div class="section-heading">
+
+                <div class="section-heading-left">
+
+                    <small>
+                        New & Featured
+                    </small>
+
+                    <h2>
+                        Featured Products
+                    </h2>
+
+                    <p>
+                        Fresh products available in our store.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="{{ url_for('shop') }}"
+                    class="view-all"
+                >
+                    View all products
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+
+            <div class="product-layout">
+
+
+                <div class="products-grid">
+
+                    {% for product in featured %}
+
+                        <article class="product-card">
+
+                            <a
+                                href="{{ url_for('product', product_id=product.id) }}"
+                            >
+
+                                <div class="product-image-wrap">
+
+                                    {% if product.image %}
+
+                                        <img
+                                            src="{{ product.image }}"
+                                            alt="{{ product.name }}"
+                                            loading="lazy"
+                                        >
+
+                                    {% else %}
+
+                                        <div class="product-image-placeholder">
+
+                                            <i class="fa-solid fa-box-open"></i>
+
+                                        </div>
+
+                                    {% endif %}
+
+
+                                    {% if loop.index <= 2 %}
+
+                                        <span class="product-badge">
+                                            New
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <div class="product-info">
+
+                                    <div class="product-category">
+                                        {{ product.category }}
+                                    </div>
+
+
+                                    <div class="product-name">
+                                        {{ product.name }}
+                                    </div>
+
+
+                                    <div class="product-bottom">
+
+                                        <span class="product-price">
+                                            {{ store.currency or '₦' }}{{ "{:,.0f}".format(product.price) }}
+                                        </span>
+
+
+                                        <span class="product-cart">
+
+                                            <i class="fa-solid fa-arrow-right"></i>
+
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </a>
+
+                        </article>
+
+                    {% else %}
+
+                        <div class="product-empty">
+
+                            <i class="fa-solid fa-box-open"></i>
+
+                            <strong>
+                                No products available yet
+                            </strong>
+
+                            <p>
+                                New products will appear here when they are added.
+                            </p>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- OFFER -->
+
+                <aside class="offer-card">
+
+                    <div class="offer-eyebrow">
+                        Special Offer
+                    </div>
+
+
+                    <h3>
+                        Great products.
+                        Better shopping.
+                    </h3>
+
+
+                    <p>
+                        Discover selected products and find
+                        something perfect for you today.
+                    </p>
+
+
+                    <a
+                        href="{{ url_for('shop') }}"
+                        class="offer-btn"
+                    >
+                        Shop Now
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             POPULAR PRODUCTS
+        ================================================= -->
+
+        <section class="home-section">
+
+            <div class="section-heading">
+
+                <div class="section-heading-left">
+
+                    <small>
+                        Customer favourites
+                    </small>
+
+                    <h2>
+                        Popular Products
+                    </h2>
+
+                    <p>
+                        Some of the products shoppers love most.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="{{ url_for('shop') }}"
+                    class="view-all"
+                >
+                    Shop everything
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+
+            <div class="products-grid">
+
+                {% for product in popular %}
+
+                    <article class="product-card">
+
+                        <a
+                            href="{{ url_for('product', product_id=product.id) }}"
+                        >
+
+                            <div class="product-image-wrap">
+
+                                {% if product.image %}
+
+                                    <img
+                                        src="{{ product.image }}"
+                                        alt="{{ product.name }}"
+                                        loading="lazy"
+                                    >
+
+                                {% else %}
+
+                                    <div class="product-image-placeholder">
+
+                                        <i class="fa-solid fa-box"></i>
+
+                                    </div>
+
+                                {% endif %}
+
+
+                                {% if loop.index <= 3 %}
+
+                                    <span class="product-badge hot">
+                                        Popular
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <div class="product-info">
+
+                                <div class="product-category">
+                                    {{ product.category }}
+                                </div>
+
+
+                                <div class="product-name">
+                                    {{ product.name }}
+                                </div>
+
+
+                                <div class="product-bottom">
+
+                                    <span class="product-price">
+                                        {{ store.currency or '₦' }}{{ "{:,.0f}".format(product.price) }}
+                                    </span>
+
+
+                                    <span class="product-cart">
+
+                                        <i class="fa-solid fa-arrow-right"></i>
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </a>
+
+                    </article>
+
+                {% else %}
+
+                    <div class="product-empty">
+
+                        <i class="fa-solid fa-store"></i>
+
+                        <strong>
+                            Your popular products will appear here.
+                        </strong>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             WHY CHOOSE US + TESTIMONIALS
+        ================================================= -->
+
+        <section class="home-section">
+
+            <div class="features-area">
+
+
+                <!-- WHY CHOOSE US -->
+
+                <div class="feature-panel">
+
+                    <h3>
+                        Why Shop With Us?
+                    </h3>
+
+
+                    <div class="feature-list">
+
+                        <div class="feature-item">
+
+                            <div class="feature-item-icon">
+                                <i class="fa-solid fa-medal"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Quality Products
+                                </strong>
+
+                                <span>
+                                    We focus on quality and value.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="feature-item">
+
+                            <div class="feature-item-icon">
+                                <i class="fa-solid fa-tags"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Great Prices
+                                </strong>
+
+                                <span>
+                                    Get excellent value for your money.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="feature-item">
+
+                            <div class="feature-item-icon">
+                                <i class="fa-solid fa-truck"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Convenient Delivery
+                                </strong>
+
+                                <span>
+                                    Order online and receive your items.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="feature-item">
+
+                            <div class="feature-item-icon">
+                                <i class="fa-solid fa-heart"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Customer First
+                                </strong>
+
+                                <span>
+                                    Your shopping experience matters.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- TESTIMONIALS -->
+
+                <div class="feature-panel">
+
+                    <h3>
+                        What Our Customers Say
+                    </h3>
+
+
+                    <div class="testimonials">
+
+
+                        <div class="testimonial">
+
+                            <div class="stars">
+                                ★★★★★
+                            </div>
+
+                            <p>
+                                Great products and a smooth shopping
+                                experience. I'll definitely shop again.
+                            </p>
+
+                            <div class="customer">
+
+                                <div class="customer-avatar">
+                                    A
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Happy Customer
+                                    </strong>
+
+                                    <span>
+                                        Verified shopper
+                                    </span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="testimonial">
+
+                            <div class="stars">
+                                ★★★★★
+                            </div>
+
+                            <p>
+                                The store is easy to use and finding
+                                products is very simple.
+                            </p>
+
+                            <div class="customer">
+
+                                <div class="customer-avatar">
+                                    C
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Happy Customer
+                                    </strong>
+
+                                    <span>
+                                        Verified shopper
+                                    </span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="testimonial">
+
+                            <div class="stars">
+                                ★★★★★
+                            </div>
+
+                            <p>
+                                Excellent service and a beautiful
+                                shopping experience.
+                            </p>
+
+                            <div class="customer">
+
+                                <div class="customer-avatar">
+                                    J
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Happy Customer
+                                    </strong>
+
+                                    <span>
+                                        Verified shopper
+                                    </span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             NEWSLETTER
+        ================================================= -->
+
+        <section class="newsletter">
+
+            <div class="newsletter-copy">
+
+                <div class="newsletter-icon">
+                    <i class="fa-regular fa-envelope"></i>
+                </div>
+
+                <div>
+
+                    <h3>
+                        Stay in the loop
+                    </h3>
+
+                    <p>
+                        Get updates about new products and special offers.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                class="newsletter-form"
+                onsubmit="return false;"
+            >
+
+                <input
+                    type="email"
+                    placeholder="Enter your email address"
+                    aria-label="Email address"
+                >
+
+                <button type="submit">
+                    Subscribe
+                </button>
+
+            </form>
+
+        </section>
+
+
+    </div>
+
+</div>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        /*
+         * Small interaction for newsletter.
+         * This does not send anything to the server yet.
+         */
+
+        const newsletterForm =
+            document.querySelector(
+                ".newsletter-form"
+            );
+
+
+        if (newsletterForm) {
+
+            newsletterForm.addEventListener(
+                "submit",
+                function () {
+
+                    const input =
+                        newsletterForm.querySelector(
+                            "input"
+                        );
+
+                    const button =
+                        newsletterForm.querySelector(
+                            "button"
+                        );
+
+
+                    if (
+                        !input ||
+                        !input.value.trim()
+                    ) {
+
+                        input.focus();
+
+                        return;
+
+                    }
+
+
+                    button.innerHTML =
+                        '<i class="fa-solid fa-check"></i> Subscribed';
+
+                    button.disabled = true;
+
+                    input.disabled = true;
+
+                }
+            );
+
+        }
+
+    }
+);
+
+</script>
+
 {% endblock %}
