@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+
     <meta charset="utf-8">
 
     <meta
@@ -24,7 +25,11 @@
         {% endblock %}
     </title>
 
-    <!-- Google Fonts -->
+
+    <!-- =====================================================
+         GOOGLE FONTS
+         ===================================================== -->
+
     <link
         rel="preconnect"
         href="https://fonts.googleapis.com"
@@ -41,25 +46,42 @@
         rel="stylesheet"
     >
 
-    <!-- Font Awesome -->
+
+    <!-- =====================================================
+         FONT AWESOME
+         ===================================================== -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     >
 
-    <!-- Main stylesheet -->
+
+    <!-- =====================================================
+         MAIN CSS
+         ===================================================== -->
+
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}"
     >
 
+
+    <!-- =====================================================
+         PAGE HEAD BLOCK
+         ===================================================== -->
+
+    {% block head %}{% endblock %}
+
+
     <style>
 
-        /* =========================================================
-           GLOBAL
-           ========================================================= */
+        /* =====================================================
+           ROOT
+           ===================================================== */
 
         :root {
+
             --primary: #6d4aff;
             --primary-dark: #5032d8;
             --primary-light: #f1edff;
@@ -83,6 +105,11 @@
                 0 12px 35px rgba(25, 18, 55, .07);
         }
 
+
+        /* =====================================================
+           RESET
+           ===================================================== */
+
         * {
             box-sizing: border-box;
         }
@@ -92,6 +119,7 @@
         }
 
         body {
+
             margin: 0;
             padding: 0;
 
@@ -101,9 +129,11 @@
                 sans-serif;
 
             color: var(--text);
-            background: #fff;
+
+            background: #ffffff;
 
             -webkit-font-smoothing: antialiased;
+
             text-rendering: optimizeLegibility;
         }
 
@@ -127,14 +157,14 @@
         }
 
 
-        /* =========================================================
+        /* =====================================================
            IMPERSONATION BAR
-           ========================================================= */
+           ===================================================== */
 
         .impersonation-bar {
-            position: relative;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
@@ -149,25 +179,28 @@
                     #7c5cff
                 );
 
-            color: #fff;
+            color: #ffffff;
 
             font-size: 13px;
             font-weight: 700;
+
+            position: relative;
 
             z-index: 9999;
         }
 
         .impersonation-bar a {
-            color: #fff;
+            color: #ffffff;
             text-decoration: underline;
         }
 
 
-        /* =========================================================
-           CUSTOMER HEADER
-           ========================================================= */
+        /* =====================================================
+           ANNOUNCEMENT
+           ===================================================== */
 
         .announcement-bar {
+
             width: 100%;
 
             padding: 9px 15px;
@@ -175,42 +208,66 @@
             text-align: center;
 
             background: #171326;
-            color: #fff;
+
+            color: #ffffff;
 
             font-size: 12px;
             font-weight: 600;
         }
 
+
+        /* =====================================================
+           CUSTOMER HEADER
+           ===================================================== */
+
         .site-header {
+
             position: sticky;
+
             top: 0;
 
             z-index: 1000;
 
-            background: rgba(255, 255, 255, .96);
+            background:
+                rgba(255,255,255,.96);
 
-            border-bottom: 1px solid var(--border);
+            border-bottom:
+                1px solid var(--border);
 
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            backdrop-filter:
+                blur(15px);
+
+            -webkit-backdrop-filter:
+                blur(15px);
         }
 
         .header-inner {
-            width: min(1200px, calc(100% - 32px));
+
+            width:
+                min(1200px, calc(100% - 32px));
 
             min-height: 76px;
 
             margin: auto;
 
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             gap: 25px;
         }
 
+
+        /* =====================================================
+           BRAND
+           ===================================================== */
+
         .brand {
+
             display: inline-flex;
+
             align-items: center;
 
             gap: 11px;
@@ -221,6 +278,7 @@
         }
 
         .brand-logo {
+
             width: 44px;
             height: 44px;
 
@@ -229,6 +287,7 @@
             border-radius: 13px;
 
             display: grid;
+
             place-items: center;
 
             overflow: hidden;
@@ -240,20 +299,23 @@
                     #8b70ff
                 );
 
-            color: #fff;
+            color: #ffffff;
 
             font-family:
                 "Plus Jakarta Sans",
                 sans-serif;
 
             font-size: 20px;
+
             font-weight: 800;
 
             box-shadow:
-                0 8px 18px rgba(109, 74, 255, .20);
+                0 8px 18px
+                rgba(109,74,255,.20);
         }
 
         .brand-logo img {
+
             width: 100%;
             height: 100%;
 
@@ -265,6 +327,7 @@
         }
 
         .brand-name {
+
             display: block;
 
             max-width: 220px;
@@ -272,6 +335,7 @@
             overflow: hidden;
 
             text-overflow: ellipsis;
+
             white-space: nowrap;
 
             color: var(--dark);
@@ -281,10 +345,12 @@
                 sans-serif;
 
             font-size: 16px;
+
             font-weight: 800;
         }
 
         .brand-subtitle {
+
             display: block;
 
             margin-top: 2px;
@@ -292,19 +358,23 @@
             color: var(--muted);
 
             font-size: 10px;
+
             font-weight: 700;
 
             text-transform: uppercase;
+
             letter-spacing: .08em;
         }
 
 
-        /* =========================================================
+        /* =====================================================
            CUSTOMER NAVIGATION
-           ========================================================= */
+           ===================================================== */
 
         .nav-menu {
+
             display: flex;
+
             align-items: center;
 
             gap: 5px;
@@ -313,7 +383,9 @@
         }
 
         .nav-menu a {
+
             display: inline-flex;
+
             align-items: center;
 
             gap: 7px;
@@ -327,6 +399,7 @@
             text-decoration: none;
 
             font-size: 13px;
+
             font-weight: 700;
 
             transition:
@@ -336,46 +409,68 @@
         }
 
         .nav-menu a:hover {
-            background: var(--primary-light);
-            color: var(--primary);
 
-            transform: translateY(-1px);
+            background:
+                var(--primary-light);
+
+            color:
+                var(--primary);
+
+            transform:
+                translateY(-1px);
         }
 
         .nav-menu a.active {
-            background: var(--primary-light);
-            color: var(--primary);
+
+            background:
+                var(--primary-light);
+
+            color:
+                var(--primary);
         }
+
+
+        /* =====================================================
+           CART BADGE
+           ===================================================== */
 
         .cart-link {
             position: relative;
         }
 
         .cart-badge {
+
             min-width: 19px;
+
             height: 19px;
 
             padding: 0 5px;
 
             display: inline-flex;
+
             align-items: center;
+
             justify-content: center;
 
             border-radius: 999px;
 
-            background: var(--primary);
-            color: #fff;
+            background:
+                var(--primary);
+
+            color: #ffffff;
 
             font-size: 10px;
+
             font-weight: 800;
         }
 
 
-        /* =========================================================
-           MOBILE MENU
-           ========================================================= */
+        /* =====================================================
+           MOBILE CUSTOMER MENU
+           ===================================================== */
 
         .mobile-menu-button {
+
             width: 43px;
             height: 43px;
 
@@ -384,25 +479,34 @@
             align-items: center;
             justify-content: center;
 
-            border: 1px solid var(--border);
+            border:
+                1px solid var(--border);
+
             border-radius: 12px;
 
-            background: #fff;
+            background: #ffffff;
+
             color: var(--dark);
 
             cursor: pointer;
 
-            box-shadow: 0 5px 16px rgba(25, 18, 55, .05);
+            box-shadow:
+                0 5px 16px
+                rgba(25,18,55,.05);
         }
 
         .mobile-menu {
+
             display: none;
 
-            padding: 10px 16px 18px;
+            padding:
+                10px 16px 18px;
 
-            background: #fff;
+            background:
+                #ffffff;
 
-            border-top: 1px solid var(--border);
+            border-top:
+                1px solid var(--border);
         }
 
         .mobile-menu.open {
@@ -410,7 +514,9 @@
         }
 
         .mobile-menu a {
+
             display: flex;
+
             align-items: center;
 
             gap: 10px;
@@ -424,31 +530,41 @@
             color: #4e4a59;
 
             font-size: 14px;
+
             font-weight: 700;
         }
 
         .mobile-menu a:hover {
-            background: var(--primary-light);
-            color: var(--primary);
+
+            background:
+                var(--primary-light);
+
+            color:
+                var(--primary);
         }
 
 
-        /* =========================================================
+        /* =====================================================
            BUTTONS
-           ========================================================= */
+           ===================================================== */
 
         .btn {
+
             display: inline-flex;
+
             align-items: center;
+
             justify-content: center;
 
             gap: 8px;
 
             min-height: 44px;
 
-            padding: 10px 17px;
+            padding:
+                10px 17px;
 
             border: 0;
+
             border-radius: 12px;
 
             text-decoration: none;
@@ -464,10 +580,12 @@
         }
 
         .btn:hover {
-            transform: translateY(-1px);
+            transform:
+                translateY(-1px);
         }
 
         .btn-primary {
+
             background:
                 linear-gradient(
                     135deg,
@@ -475,35 +593,46 @@
                     #876cff
                 );
 
-            color: #fff;
+            color: #ffffff;
 
             box-shadow:
-                0 9px 22px rgba(109, 74, 255, .20);
-        }
-
-        .btn-primary:hover {
-            filter: brightness(1.04);
+                0 9px 22px
+                rgba(109,74,255,.20);
         }
 
         .btn-secondary {
-            background: #f0edff;
-            color: var(--primary);
+
+            background:
+                #f0edff;
+
+            color:
+                var(--primary);
         }
 
         .btn-danger {
-            background: #fff0f1;
-            color: var(--danger);
+
+            background:
+                #fff0f1;
+
+            color:
+                var(--danger);
         }
 
         .btn-success {
-            background: #eaf9f1;
-            color: var(--success);
+
+            background:
+                #eaf9f1;
+
+            color:
+                var(--success);
         }
 
         .btn-sm {
+
             min-height: 36px;
 
-            padding: 7px 11px;
+            padding:
+                7px 11px;
 
             border-radius: 9px;
 
@@ -511,90 +640,117 @@
         }
 
 
-        /* =========================================================
+        /* =====================================================
            FLASH MESSAGES
-           ========================================================= */
+           ===================================================== */
 
         .flash-container {
-            width: min(1180px, calc(100% - 32px));
 
-            margin: 18px auto 0;
+            width:
+                min(1180px, calc(100% - 32px));
+
+            margin:
+                18px auto 0;
 
             position: relative;
+
             z-index: 20;
         }
 
         .flash {
+
             display: flex;
+
             align-items: center;
 
             gap: 10px;
 
             margin-bottom: 10px;
 
-            padding: 13px 15px;
+            padding:
+                13px 15px;
 
             border-radius: 13px;
 
-            border: 1px solid transparent;
+            border:
+                1px solid transparent;
 
             font-size: 13px;
+
             font-weight: 600;
         }
 
         .flash.success {
+
             background: #ecfbf3;
+
             border-color: #ccefdc;
+
             color: #157347;
         }
 
         .flash.danger,
         .flash.error {
+
             background: #fff0f1;
+
             border-color: #f5ced1;
+
             color: #b4232a;
         }
 
         .flash.warning {
+
             background: #fff8e9;
+
             border-color: #f6e0a8;
+
             color: #8a5a00;
         }
 
         .flash.info {
+
             background: #eef4ff;
+
             border-color: #d6e2ff;
+
             color: #315aa8;
         }
 
 
-        /* =========================================================
+        /* =====================================================
            ADMIN LAYOUT
-           ========================================================= */
+           ===================================================== */
 
         .admin-layout {
+
             min-height: 100vh;
 
             display: flex;
 
-            background: var(--bg);
+            background:
+                var(--bg);
         }
 
         .admin-sidebar {
+
             position: fixed;
 
             left: 0;
             top: 0;
             bottom: 0;
 
-            width: var(--sidebar-width);
+            width:
+                var(--sidebar-width);
 
             z-index: 2000;
 
             display: flex;
+
             flex-direction: column;
 
-            padding: 20px 14px;
+            padding:
+                20px 14px;
 
             background:
                 linear-gradient(
@@ -603,37 +759,49 @@
                     #21183b 100%
                 );
 
-            color: #fff;
+            color: #ffffff;
 
             overflow-y: auto;
 
             box-shadow:
-                8px 0 30px rgba(20, 14, 40, .10);
+                8px 0 30px
+                rgba(20,14,40,.10);
         }
 
+
+        /* =====================================================
+           ADMIN BRAND
+           ===================================================== */
+
         .admin-brand {
+
             display: flex;
+
             align-items: center;
 
             gap: 11px;
 
-            padding: 6px 9px 22px;
+            padding:
+                6px 9px 22px;
 
             text-decoration: none;
 
             border-bottom:
-                1px solid rgba(255,255,255,.08);
+                1px solid
+                rgba(255,255,255,.08);
 
             margin-bottom: 20px;
         }
 
         .admin-brand-icon {
+
             width: 43px;
             height: 43px;
 
             flex: 0 0 43px;
 
             display: grid;
+
             place-items: center;
 
             border-radius: 12px;
@@ -645,10 +813,21 @@
                     #9178ff
                 );
 
-            color: #fff;
+            color: #ffffff;
 
             font-size: 18px;
+
             font-weight: 800;
+        }
+
+        .admin-brand-icon img {
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            border-radius: 12px;
         }
 
         .admin-brand-text {
@@ -656,39 +835,53 @@
         }
 
         .admin-brand-name {
+
             display: block;
 
             max-width: 170px;
 
             overflow: hidden;
+
             text-overflow: ellipsis;
+
             white-space: nowrap;
 
-            color: #fff;
+            color: #ffffff;
 
             font-family:
                 "Plus Jakarta Sans",
                 sans-serif;
 
             font-size: 14px;
+
             font-weight: 800;
         }
 
         .admin-brand-label {
+
             display: block;
 
             margin-top: 3px;
 
-            color: rgba(255,255,255,.50);
+            color:
+                rgba(255,255,255,.50);
 
             font-size: 9px;
+
             font-weight: 800;
 
             letter-spacing: .13em;
         }
 
+
+        /* =====================================================
+           ADMIN SECTION
+           ===================================================== */
+
         .admin-section-title {
-            padding: 0 11px;
+
+            padding:
+                0 11px;
 
             margin:
                 17px 0 7px;
@@ -697,6 +890,7 @@
                 rgba(255,255,255,.35);
 
             font-size: 9px;
+
             font-weight: 800;
 
             letter-spacing: .14em;
@@ -705,22 +899,26 @@
         }
 
         .admin-nav {
+
             display: grid;
 
             gap: 4px;
         }
 
         .admin-nav a {
+
             position: relative;
 
             display: flex;
+
             align-items: center;
 
             gap: 11px;
 
             min-height: 43px;
 
-            padding: 10px 12px;
+            padding:
+                10px 12px;
 
             border-radius: 11px;
 
@@ -730,6 +928,7 @@
             text-decoration: none;
 
             font-size: 13px;
+
             font-weight: 700;
 
             transition:
@@ -739,6 +938,7 @@
         }
 
         .admin-nav a i {
+
             width: 18px;
 
             text-align: center;
@@ -747,15 +947,18 @@
         }
 
         .admin-nav a:hover {
+
             background:
                 rgba(255,255,255,.07);
 
-            color: #fff;
+            color: #ffffff;
 
-            transform: translateX(2px);
+            transform:
+                translateX(2px);
         }
 
         .admin-nav a.active {
+
             background:
                 linear-gradient(
                     90deg,
@@ -763,16 +966,19 @@
                     rgba(109,74,255,.12)
                 );
 
-            color: #fff;
+            color: #ffffff;
         }
 
         .admin-nav a.active::before {
+
             content: "";
 
             position: absolute;
 
             left: 0;
+
             top: 9px;
+
             bottom: 9px;
 
             width: 3px;
@@ -782,43 +988,32 @@
             background: #a28cff;
         }
 
-        .admin-nav-badge {
-            margin-left: auto;
 
-            min-width: 20px;
-            height: 20px;
-
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 0 6px;
-
-            border-radius: 999px;
-
-            background: #ff5261;
-            color: #fff;
-
-            font-size: 9px;
-            font-weight: 800;
-        }
+        /* =====================================================
+           ADMIN SIDEBAR FOOTER
+           ===================================================== */
 
         .admin-sidebar-footer {
+
             margin-top: auto;
 
             padding-top: 15px;
 
             border-top:
-                1px solid rgba(255,255,255,.08);
+                1px solid
+                rgba(255,255,255,.08);
         }
 
         .admin-sidebar-footer a {
+
             display: flex;
+
             align-items: center;
 
             gap: 10px;
 
-            padding: 11px 12px;
+            padding:
+                11px 12px;
 
             border-radius: 10px;
 
@@ -828,34 +1023,47 @@
             text-decoration: none;
 
             font-size: 12px;
+
             font-weight: 700;
         }
 
         .admin-sidebar-footer a:hover {
+
             background:
                 rgba(255,255,255,.07);
 
-            color: #fff;
+            color: #ffffff;
         }
 
-        .admin-main {
-            width: calc(100% - var(--sidebar-width));
 
-            margin-left: var(--sidebar-width);
+        /* =====================================================
+           ADMIN MAIN
+           ===================================================== */
+
+        .admin-main {
+
+            width:
+                calc(100% - var(--sidebar-width));
+
+            margin-left:
+                var(--sidebar-width);
 
             min-height: 100vh;
 
             display: flex;
+
             flex-direction: column;
         }
 
 
-        /* =========================================================
+        /* =====================================================
            ADMIN TOPBAR
-           ========================================================= */
+           ===================================================== */
 
         .admin-topbar {
+
             position: sticky;
+
             top: 0;
 
             z-index: 1000;
@@ -863,12 +1071,15 @@
             min-height: 70px;
 
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             gap: 20px;
 
-            padding: 0 25px;
+            padding:
+                0 25px;
 
             background:
                 rgba(255,255,255,.95);
@@ -876,17 +1087,21 @@
             border-bottom:
                 1px solid var(--border);
 
-            backdrop-filter: blur(15px);
+            backdrop-filter:
+                blur(15px);
         }
 
         .admin-topbar-left {
+
             display: flex;
+
             align-items: center;
 
             gap: 12px;
         }
 
         .admin-mobile-toggle {
+
             width: 40px;
             height: 40px;
 
@@ -895,10 +1110,12 @@
             align-items: center;
             justify-content: center;
 
-            border: 1px solid var(--border);
+            border:
+                1px solid var(--border);
+
             border-radius: 10px;
 
-            background: #fff;
+            background: #ffffff;
 
             color: var(--dark);
 
@@ -906,28 +1123,34 @@
         }
 
         .admin-page-heading {
+
             font-family:
                 "Plus Jakarta Sans",
                 sans-serif;
 
             font-size: 16px;
+
             font-weight: 800;
 
             color: var(--dark);
         }
 
         .admin-topbar-right {
+
             display: flex;
+
             align-items: center;
 
             gap: 9px;
         }
 
         .admin-topbar-link {
+
             width: 39px;
             height: 39px;
 
             display: inline-flex;
+
             align-items: center;
             justify-content: center;
 
@@ -943,12 +1166,18 @@
         }
 
         .admin-topbar-link:hover {
-            background: var(--primary-light);
-            color: var(--primary);
+
+            background:
+                var(--primary-light);
+
+            color:
+                var(--primary);
         }
 
         .admin-user {
+
             display: flex;
+
             align-items: center;
 
             gap: 9px;
@@ -957,31 +1186,40 @@
         }
 
         .admin-user-avatar {
+
             width: 36px;
             height: 36px;
 
             display: grid;
+
             place-items: center;
 
             border-radius: 10px;
 
-            background: var(--primary-light);
-            color: var(--primary);
+            background:
+                var(--primary-light);
+
+            color:
+                var(--primary);
 
             font-size: 13px;
+
             font-weight: 800;
         }
 
         .admin-user-info strong {
+
             display: block;
 
             color: var(--dark);
 
             font-size: 12px;
+
             font-weight: 800;
         }
 
         .admin-user-info span {
+
             display: block;
 
             margin-top: 1px;
@@ -992,25 +1230,26 @@
         }
 
 
-        /* =========================================================
+        /* =====================================================
            ADMIN CONTENT
-           ========================================================= */
+           ===================================================== */
 
         .admin-content {
+
             flex: 1;
 
             width: 100%;
 
-            padding:
-                26px;
+            padding: 26px;
         }
 
 
-        /* =========================================================
-           MOBILE SIDEBAR OVERLAY
-           ========================================================= */
+        /* =====================================================
+           ADMIN OVERLAY
+           ===================================================== */
 
         .admin-overlay {
+
             position: fixed;
 
             inset: 0;
@@ -1028,12 +1267,13 @@
         }
 
 
-        /* =========================================================
-           GENERAL ADMIN HELPERS
-           ========================================================= */
+        /* =====================================================
+           ADMIN CARDS
+           ===================================================== */
 
         .admin-card {
-            background: #fff;
+
+            background: #ffffff;
 
             border:
                 1px solid var(--border);
@@ -1041,17 +1281,22 @@
             border-radius: 18px;
 
             box-shadow:
-                0 8px 25px rgba(25,18,55,.05);
+                0 8px 25px
+                rgba(25,18,55,.05);
         }
 
         .admin-card-header {
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             gap: 15px;
 
-            padding: 18px 20px;
+            padding:
+                18px 20px;
 
             border-bottom:
                 1px solid var(--border);
@@ -1059,11 +1304,13 @@
 
         .admin-card-header h2,
         .admin-card-header h3 {
+
             margin: 0;
 
             color: var(--dark);
 
             font-size: 17px;
+
             font-weight: 800;
         }
 
@@ -1071,13 +1318,20 @@
             padding: 20px;
         }
 
+
+        /* =====================================================
+           TABLES
+           ===================================================== */
+
         .admin-table-wrap {
+
             width: 100%;
 
             overflow-x: auto;
         }
 
         .admin-table {
+
             width: 100%;
 
             border-collapse: collapse;
@@ -1086,28 +1340,37 @@
         }
 
         .admin-table th {
-            padding: 13px 14px;
 
-            background: #faf9fc;
+            padding:
+                13px 14px;
 
-            color: #85808f;
+            background:
+                #faf9fc;
+
+            color:
+                #85808f;
 
             text-align: left;
 
             font-size: 11px;
+
             font-weight: 800;
 
             text-transform: uppercase;
+
             letter-spacing: .05em;
         }
 
         .admin-table td {
-            padding: 14px;
+
+            padding:
+                14px;
 
             border-top:
                 1px solid #f0eef4;
 
-            color: #45414e;
+            color:
+                #45414e;
 
             font-size: 13px;
         }
@@ -1117,33 +1380,37 @@
         }
 
 
-        /* =========================================================
-           FOOTER
-           ========================================================= */
+        /* =====================================================
+           CUSTOMER FOOTER
+           ===================================================== */
 
         .site-footer {
+
             margin-top: 40px;
 
-            background: #171326;
-            color: #fff;
+            background:
+                #171326;
+
+            color: #ffffff;
         }
 
         .footer-inner {
-            width: min(1180px, calc(100% - 32px));
+
+            width:
+                min(1180px, calc(100% - 32px));
 
             margin: auto;
 
-            padding: 45px 0 25px;
+            padding:
+                45px 0 25px;
         }
 
         .footer-grid {
+
             display: grid;
 
             grid-template-columns:
-                1.4fr
-                1fr
-                1fr
-                1fr;
+                1.4fr 1fr 1fr 1fr;
 
             gap: 30px;
         }
@@ -1153,9 +1420,11 @@
         }
 
         .footer-brand h3 {
-            margin: 0 0 10px;
 
-            color: #fff;
+            margin:
+                0 0 10px;
+
+            color: #ffffff;
 
             font-family:
                 "Plus Jakarta Sans",
@@ -1165,6 +1434,7 @@
         }
 
         .footer-brand p {
+
             margin: 0;
 
             color:
@@ -1176,18 +1446,23 @@
         }
 
         .footer-col h4 {
-            margin: 0 0 13px;
 
-            color: #fff;
+            margin:
+                0 0 13px;
+
+            color: #ffffff;
 
             font-size: 12px;
+
             font-weight: 800;
 
             text-transform: uppercase;
+
             letter-spacing: .08em;
         }
 
         .footer-col a {
+
             display: block;
 
             margin-bottom: 9px;
@@ -1201,12 +1476,15 @@
         }
 
         .footer-col a:hover {
-            color: #fff;
+            color: #ffffff;
         }
 
         .footer-bottom {
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             gap: 20px;
@@ -1216,7 +1494,8 @@
             padding-top: 18px;
 
             border-top:
-                1px solid rgba(255,255,255,.09);
+                1px solid
+                rgba(255,255,255,.09);
 
             color:
                 rgba(255,255,255,.45);
@@ -1225,9 +1504,9 @@
         }
 
 
-        /* =========================================================
+        /* =====================================================
            RESPONSIVE
-           ========================================================= */
+           ===================================================== */
 
         @media (max-width: 1050px) {
 
@@ -1252,11 +1531,8 @@
 
         @media (max-width: 900px) {
 
-            :root {
-                --sidebar-width: 260px;
-            }
-
             .admin-sidebar {
+
                 transform:
                     translateX(-105%);
 
@@ -1264,29 +1540,36 @@
                     transform .25s ease;
 
                 box-shadow:
-                    15px 0 40px rgba(20,14,40,.20);
+                    15px 0 40px
+                    rgba(20,14,40,.20);
             }
 
             .admin-sidebar.open {
+
                 transform:
                     translateX(0);
             }
 
             .admin-main {
+
                 width: 100%;
 
                 margin-left: 0;
             }
 
             .admin-mobile-toggle {
+
                 display: inline-flex;
             }
 
             .admin-content {
-                padding: 20px 16px;
+
+                padding:
+                    20px 16px;
             }
 
             .admin-topbar {
+
                 padding:
                     0 16px;
             }
@@ -1296,19 +1579,23 @@
         @media (max-width: 650px) {
 
             .header-inner {
+
                 width:
                     calc(100% - 22px);
             }
 
             .brand-name {
+
                 max-width: 150px;
             }
 
             .brand-subtitle {
+
                 display: none;
             }
 
             .brand-logo {
+
                 width: 40px;
                 height: 40px;
 
@@ -1316,15 +1603,18 @@
             }
 
             .flash-container {
+
                 width:
                     calc(100% - 22px);
             }
 
             .footer-grid {
+
                 grid-template-columns: 1fr;
             }
 
             .footer-bottom {
+
                 flex-direction: column;
 
                 align-items: flex-start;
@@ -1343,11 +1633,13 @@
         @media (max-width: 480px) {
 
             .admin-content {
+
                 padding:
                     16px 11px;
             }
 
             .admin-topbar {
+
                 min-height: 62px;
 
                 padding:
@@ -1359,31 +1651,34 @@
             }
 
             .admin-user-avatar {
+
                 width: 33px;
                 height: 33px;
             }
 
             .footer-inner {
+
                 width:
                     calc(100% - 22px);
             }
         }
 
 
-        /* =========================================================
+        /* =====================================================
            ACCESSIBILITY
-           ========================================================= */
+           ===================================================== */
 
         :focus-visible {
+
             outline:
-                3px solid rgba(109,74,255,.25);
+                3px solid
+                rgba(109,74,255,.25);
 
             outline-offset: 2px;
         }
 
     </style>
 
-    {% block head %}{% endblock %}
 </head>
 
 
@@ -1392,9 +1687,9 @@
 >
 
 
-<!-- =============================================================
-     IMPERSONATION NOTICE
-     ============================================================= -->
+<!-- =========================================================
+     IMPERSONATION
+     ========================================================= -->
 
 {% if is_impersonating %}
 
@@ -1419,16 +1714,12 @@
 {% endif %}
 
 
-<!-- =============================================================
-     ADMIN / CUSTOMER LAYOUT SWITCH
-     ============================================================= -->
+<!-- =========================================================
+     ADMIN VERSION
+     ========================================================= -->
 
 {% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
 
-
-<!-- =============================================================
-     ADMIN LAYOUT
-     ============================================================= -->
 
 <div class="admin-layout">
 
@@ -1442,14 +1733,17 @@
     ></div>
 
 
-    <!-- =========================================================
-         ADMIN SIDEBAR
-         ========================================================= -->
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <aside
         class="admin-sidebar"
         id="adminSidebar"
     >
+
+
+        <!-- ADMIN BRAND -->
 
         <a
             href="{{ url_for('admin_dashboard') }}"
@@ -1475,10 +1769,16 @@
 
             </div>
 
+
             <div class="admin-brand-text">
 
                 <span class="admin-brand-name">
-                    {{ store.get('store_name', 'Online Store') }}
+
+                    {{ store.get(
+                        'store_name',
+                        'Online Store'
+                    ) }}
+
                 </span>
 
                 <span class="admin-brand-label">
@@ -1490,13 +1790,16 @@
         </a>
 
 
-        <!-- MAIN -->
+        <!-- =================================================
+             MAIN
+             ================================================= -->
 
         <div class="admin-section-title">
             Main
         </div>
 
         <nav class="admin-nav">
+
 
             <a
                 href="{{ url_for('admin_dashboard') }}"
@@ -1505,7 +1808,9 @@
 
                 <i class="fa-solid fa-grid-2"></i>
 
-                <span>Dashboard</span>
+                <span>
+                    Dashboard
+                </span>
 
             </a>
 
@@ -1517,7 +1822,9 @@
 
                 <i class="fa-solid fa-cart-shopping"></i>
 
-                <span>Orders</span>
+                <span>
+                    Orders
+                </span>
 
             </a>
 
@@ -1529,7 +1836,9 @@
 
                 <i class="fa-solid fa-users"></i>
 
-                <span>Customers</span>
+                <span>
+                    Customers
+                </span>
 
             </a>
 
@@ -1541,7 +1850,9 @@
 
                 <i class="fa-solid fa-ticket"></i>
 
-                <span>Coupons</span>
+                <span>
+                    Coupons
+                </span>
 
             </a>
 
@@ -1553,20 +1864,25 @@
 
                 <i class="fa-solid fa-chart-column"></i>
 
-                <span>Sales Reports</span>
+                <span>
+                    Sales Reports
+                </span>
 
             </a>
 
         </nav>
 
 
-        <!-- STORE -->
+        <!-- =================================================
+             STORE
+             ================================================= -->
 
         <div class="admin-section-title">
             Store
         </div>
 
         <nav class="admin-nav">
+
 
             <a
                 href="{{ url_for('admin_products') }}"
@@ -1575,7 +1891,9 @@
 
                 <i class="fa-solid fa-box"></i>
 
-                <span>Products</span>
+                <span>
+                    Products
+                </span>
 
             </a>
 
@@ -1587,7 +1905,9 @@
 
                 <i class="fa-solid fa-layer-group"></i>
 
-                <span>Categories</span>
+                <span>
+                    Categories
+                </span>
 
             </a>
 
@@ -1599,20 +1919,25 @@
 
                 <i class="fa-solid fa-gear"></i>
 
-                <span>Store Settings</span>
+                <span>
+                    Store Settings
+                </span>
 
             </a>
 
         </nav>
 
 
-        <!-- ACCOUNT -->
+        <!-- =================================================
+             ACCOUNT
+             ================================================= -->
 
         <div class="admin-section-title">
             Account
         </div>
 
         <nav class="admin-nav">
+
 
             <a
                 href="{{ url_for('admin_profile') }}"
@@ -1621,20 +1946,26 @@
 
                 <i class="fa-solid fa-user"></i>
 
-                <span>My Profile</span>
+                <span>
+                    My Profile
+                </span>
 
             </a>
 
         </nav>
 
 
-        <!-- SIDEBAR FOOTER -->
+        <!-- =================================================
+             SIDEBAR FOOTER
+             ================================================= -->
 
         <div class="admin-sidebar-footer">
+
 
             <a
                 href="{{ url_for('index') }}"
                 target="_blank"
+                rel="noopener"
             >
 
                 <i class="fa-solid fa-store"></i>
@@ -1663,9 +1994,9 @@
     </aside>
 
 
-    <!-- =========================================================
+    <!-- =====================================================
          ADMIN MAIN
-         ========================================================= -->
+         ===================================================== -->
 
     <div class="admin-main">
 
@@ -1673,6 +2004,7 @@
         <!-- TOPBAR -->
 
         <header class="admin-topbar">
+
 
             <div class="admin-topbar-left">
 
@@ -1701,11 +2033,13 @@
 
             <div class="admin-topbar-right">
 
+
                 <a
                     href="{{ url_for('index') }}"
                     class="admin-topbar-link"
                     title="View Store"
                     target="_blank"
+                    rel="noopener"
                 >
 
                     <i class="fa-solid fa-store"></i>
@@ -1725,6 +2059,7 @@
 
 
                 <div class="admin-user">
+
 
                     <div class="admin-user-avatar">
 
@@ -1770,9 +2105,7 @@
         </header>
 
 
-        <!-- =====================================================
-             ADMIN CONTENT MAIN
-             ===================================================== -->
+        <!-- ADMIN CONTENT -->
 
         <main class="admin-content">
 
@@ -1780,12 +2113,10 @@
 {% else %}
 
 
-<!-- =============================================================
-     CUSTOMER WEBSITE
-     ============================================================= -->
+<!-- =========================================================
+     CUSTOMER VERSION
+     ========================================================= -->
 
-
-<!-- ANNOUNCEMENT -->
 
 <div class="announcement-bar">
 
@@ -1796,9 +2127,10 @@
 </div>
 
 
-<!-- HEADER -->
+<!-- CUSTOMER HEADER -->
 
 <header class="site-header">
+
 
     <div class="header-inner">
 
@@ -1833,7 +2165,12 @@
             <div class="brand-text">
 
                 <span class="brand-name">
-                    {{ store.get('store_name', 'Online Store') }}
+
+                    {{ store.get(
+                        'store_name',
+                        'Online Store'
+                    ) }}
+
                 </span>
 
                 <span class="brand-subtitle">
@@ -1848,6 +2185,7 @@
         <!-- DESKTOP NAV -->
 
         <nav class="nav-menu">
+
 
             <a
                 href="{{ url_for('index') }}"
@@ -1893,10 +2231,10 @@
             {% endif %}
 
 
-            {% if 'about' in current_app.view_functions %}
+            <!-- SAFE ABOUT LINK -->
 
             <a
-                href="{{ url_for('about') }}"
+                href="{{ url_for('index') }}#about"
             >
 
                 <i class="fa-solid fa-circle-info"></i>
@@ -1905,13 +2243,11 @@
 
             </a>
 
-            {% endif %}
 
-
-            {% if 'contact' in current_app.view_functions %}
+            <!-- SAFE CONTACT LINK -->
 
             <a
-                href="{{ url_for('contact') }}"
+                href="{{ url_for('index') }}#contact"
             >
 
                 <i class="fa-solid fa-envelope"></i>
@@ -1919,8 +2255,6 @@
                 Contact
 
             </a>
-
-            {% endif %}
 
 
             {% if 'cart' in current_app.view_functions %}
@@ -1995,7 +2329,7 @@
         </nav>
 
 
-        <!-- MOBILE MENU BUTTON -->
+        <!-- MOBILE BUTTON -->
 
         <button
             type="button"
@@ -2019,6 +2353,7 @@
         class="mobile-menu"
         id="mobileMenu"
     >
+
 
         <a href="{{ url_for('index') }}">
 
@@ -2055,9 +2390,9 @@
         {% endif %}
 
 
-        {% if 'about' in current_app.view_functions %}
+        <!-- SAFE ABOUT -->
 
-        <a href="{{ url_for('about') }}">
+        <a href="{{ url_for('index') }}#about">
 
             <i class="fa-solid fa-circle-info"></i>
 
@@ -2065,20 +2400,16 @@
 
         </a>
 
-        {% endif %}
 
+        <!-- SAFE CONTACT -->
 
-        {% if 'contact' in current_app.view_functions %}
-
-        <a href="{{ url_for('contact') }}">
+        <a href="{{ url_for('index') }}#contact">
 
             <i class="fa-solid fa-envelope"></i>
 
             Contact
 
         </a>
-
-        {% endif %}
 
 
         {% if 'cart' in current_app.view_functions %}
@@ -2141,6 +2472,7 @@
 
         {% endif %}
 
+
     </div>
 
 </header>
@@ -2153,9 +2485,9 @@
 {% endif %}
 
 
-<!-- =============================================================
+<!-- =========================================================
      FLASH MESSAGES
-     ============================================================= -->
+     ========================================================= -->
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -2166,6 +2498,7 @@
             {% for category, message in messages %}
 
                 <div class="flash {{ category }}">
+
 
                     {% if category == 'success' %}
 
@@ -2185,9 +2518,11 @@
 
                     {% endif %}
 
+
                     <span>
                         {{ message }}
                     </span>
+
 
                 </div>
 
@@ -2200,42 +2535,45 @@
 {% endwith %}
 
 
-<!-- =============================================================
-     CHILD PAGE CONTENT
-     THIS IS THE ONLY CONTENT BLOCK
-     ============================================================= -->
+<!-- =========================================================
+     ONLY CONTENT BLOCK
+     ========================================================= -->
 
 {% block content %}{% endblock %}
 
 
-<!-- Close the single main opened above -->
+<!-- CLOSE MAIN -->
 
 </main>
 
 
-<!-- =============================================================
-     CLOSE ADMIN OR CUSTOMER LAYOUT
-     ============================================================= -->
+<!-- =========================================================
+     ADMIN/CUSTOMER CLOSING
+     ========================================================= -->
 
 {% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
 
+
         </div>
-        <!-- /.admin-main -->
+        <!-- END ADMIN MAIN -->
+
 
     </div>
-    <!-- /.admin-layout -->
+    <!-- END ADMIN LAYOUT -->
 
 
 {% else %}
 
 
-<!-- =============================================================
+<!-- =========================================================
      CUSTOMER FOOTER
-     ============================================================= -->
+     ========================================================= -->
 
 <footer class="site-footer">
 
+
     <div class="footer-inner">
+
 
         <div class="footer-grid">
 
@@ -2245,7 +2583,12 @@
             <div class="footer-brand">
 
                 <h3>
-                    {{ store.get('store_name', 'Online Store') }}
+
+                    {{ store.get(
+                        'store_name',
+                        'Online Store'
+                    ) }}
+
                 </h3>
 
                 <p>
@@ -2267,6 +2610,7 @@
                 <h4>
                     Shop
                 </h4>
+
 
                 {% if 'products' in current_app.view_functions %}
 
@@ -2305,22 +2649,15 @@
                     Company
                 </h4>
 
-                {% if 'about' in current_app.view_functions %}
 
-                <a href="{{ url_for('about') }}">
+                <a href="{{ url_for('index') }}#about">
                     About Us
                 </a>
 
-                {% endif %}
 
-
-                {% if 'contact' in current_app.view_functions %}
-
-                <a href="{{ url_for('contact') }}">
+                <a href="{{ url_for('index') }}#contact">
                     Contact
                 </a>
-
-                {% endif %}
 
             </div>
 
@@ -2342,6 +2679,7 @@
 
                 {% else %}
 
+
                 {% if 'login' in current_app.view_functions %}
 
                 <a href="{{ url_for('login') }}">
@@ -2358,6 +2696,7 @@
                 </a>
 
                 {% endif %}
+
 
                 {% endif %}
 
@@ -2380,6 +2719,7 @@
 
             </div>
 
+
         </div>
 
 
@@ -2387,11 +2727,15 @@
 
         <div class="footer-bottom">
 
+
             <span>
 
                 © {{ current_year }}
 
-                {{ store.get('store_name', 'Online Store') }}.
+                {{ store.get(
+                    'store_name',
+                    'Online Store'
+                ) }}.
 
                 All rights reserved.
 
@@ -2401,6 +2745,7 @@
             <span>
                 Powered by S&A CreativeMind
             </span>
+
 
         </div>
 
@@ -2412,230 +2757,281 @@
 {% endif %}
 
 
-<!-- =============================================================
+<!-- =========================================================
      ADMIN JAVASCRIPT
-     ============================================================= -->
+     ========================================================= -->
 
 {% if g.user and g.user['is_admin'] and request.path.startswith('/admin') %}
 
 <script>
 
-    function toggleAdminSidebar() {
+
+function toggleAdminSidebar() {
+
+    const sidebar =
+        document.getElementById("adminSidebar");
+
+    const overlay =
+        document.getElementById("adminOverlay");
+
+
+    if (!sidebar) {
+        return;
+    }
+
+
+    sidebar.classList.toggle("open");
+
+
+    if (overlay) {
+
+        overlay.classList.toggle(
+            "show",
+            sidebar.classList.contains("open")
+        );
+
+    }
+
+}
+
+
+function closeAdminSidebar() {
+
+    const sidebar =
+        document.getElementById("adminSidebar");
+
+    const overlay =
+        document.getElementById("adminOverlay");
+
+
+    if (sidebar) {
+
+        sidebar.classList.remove("open");
+
+    }
+
+
+    if (overlay) {
+
+        overlay.classList.remove("show");
+
+    }
+
+}
+
+
+document.addEventListener(
+    "click",
+    function(event) {
 
         const sidebar =
             document.getElementById("adminSidebar");
 
-        const overlay =
-            document.getElementById("adminOverlay");
+        const toggle =
+            document.querySelector(
+                ".admin-mobile-toggle"
+            );
 
-        if (!sidebar) {
+
+        if (!sidebar || !toggle) {
             return;
         }
 
-        sidebar.classList.toggle("open");
 
-        if (overlay) {
-            overlay.classList.toggle(
-                "show",
-                sidebar.classList.contains("open")
-            );
+        if (
+            window.innerWidth <= 900 &&
+            sidebar.classList.contains("open") &&
+            !sidebar.contains(event.target) &&
+            !toggle.contains(event.target)
+        ) {
+
+            closeAdminSidebar();
+
         }
+
     }
+);
 
 
-    function closeAdminSidebar() {
+window.addEventListener(
+    "resize",
+    function() {
 
-        const sidebar =
-            document.getElementById("adminSidebar");
+        if (window.innerWidth > 900) {
 
-        const overlay =
-            document.getElementById("adminOverlay");
+            closeAdminSidebar();
 
-        if (sidebar) {
-            sidebar.classList.remove("open");
         }
 
-        if (overlay) {
-            overlay.classList.remove("show");
-        }
     }
+);
 
-
-    document.addEventListener(
-        "click",
-        function(event) {
-
-            const sidebar =
-                document.getElementById("adminSidebar");
-
-            const toggle =
-                document.querySelector(".admin-mobile-toggle");
-
-            if (!sidebar || !toggle) {
-                return;
-            }
-
-            if (
-                window.innerWidth <= 900 &&
-                sidebar.classList.contains("open") &&
-                !sidebar.contains(event.target) &&
-                !toggle.contains(event.target)
-            ) {
-
-                closeAdminSidebar();
-
-            }
-
-        }
-    );
-
-
-    window.addEventListener(
-        "resize",
-        function() {
-
-            if (window.innerWidth > 900) {
-                closeAdminSidebar();
-            }
-
-        }
-    );
 
 </script>
 
 {% endif %}
 
 
-<!-- =============================================================
+<!-- =========================================================
      CUSTOMER JAVASCRIPT
-     ============================================================= -->
+     ========================================================= -->
 
 <script>
 
-    function toggleMobileMenu() {
+
+function toggleMobileMenu() {
+
+    const menu =
+        document.getElementById("mobileMenu");
+
+    const button =
+        document.getElementById(
+            "mobileMenuButton"
+        );
+
+
+    if (!menu) {
+        return;
+    }
+
+
+    const isOpen =
+        menu.classList.toggle("open");
+
+
+    if (button) {
+
+        button.setAttribute(
+            "aria-expanded",
+            isOpen ? "true" : "false"
+        );
+
+
+        const icon =
+            button.querySelector("i");
+
+
+        if (icon) {
+
+            icon.className =
+                isOpen
+                ? "fa-solid fa-xmark"
+                : "fa-solid fa-bars";
+
+        }
+
+    }
+
+}
+
+
+document.addEventListener(
+    "click",
+    function(event) {
 
         const menu =
             document.getElementById("mobileMenu");
 
         const button =
-            document.getElementById("mobileMenuButton");
+            document.getElementById(
+                "mobileMenuButton"
+            );
 
-        if (!menu) {
+
+        if (!menu || !button) {
             return;
         }
 
-        const isOpen =
-            menu.classList.toggle("open");
 
-        if (button) {
+        if (
+            menu.classList.contains("open") &&
+            !menu.contains(event.target) &&
+            !button.contains(event.target)
+        ) {
+
+            menu.classList.remove("open");
+
 
             button.setAttribute(
                 "aria-expanded",
-                isOpen ? "true" : "false"
+                "false"
             );
+
 
             const icon =
                 button.querySelector("i");
 
+
             if (icon) {
 
                 icon.className =
-                    isOpen
-                    ? "fa-solid fa-xmark"
-                    : "fa-solid fa-bars";
+                    "fa-solid fa-bars";
 
             }
 
         }
 
     }
+);
 
 
-    document.addEventListener(
-        "click",
-        function(event) {
+window.addEventListener(
+    "resize",
+    function() {
+
+        if (window.innerWidth > 1050) {
 
             const menu =
-                document.getElementById("mobileMenu");
+                document.getElementById(
+                    "mobileMenu"
+                );
 
             const button =
-                document.getElementById("mobileMenuButton");
+                document.getElementById(
+                    "mobileMenuButton"
+                );
 
-            if (!menu || !button) {
-                return;
-            }
 
-            if (
-                menu.classList.contains("open") &&
-                !menu.contains(event.target) &&
-                !button.contains(event.target)
-            ) {
+            if (menu) {
 
                 menu.classList.remove("open");
+
+            }
+
+
+            if (button) {
 
                 button.setAttribute(
                     "aria-expanded",
                     "false"
                 );
 
+
                 const icon =
                     button.querySelector("i");
 
+
                 if (icon) {
+
                     icon.className =
                         "fa-solid fa-bars";
-                }
-
-            }
-
-        }
-    );
-
-
-    window.addEventListener(
-        "resize",
-        function() {
-
-            if (window.innerWidth > 1050) {
-
-                const menu =
-                    document.getElementById("mobileMenu");
-
-                const button =
-                    document.getElementById("mobileMenuButton");
-
-                if (menu) {
-                    menu.classList.remove("open");
-                }
-
-                if (button) {
-
-                    button.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
-
-                    const icon =
-                        button.querySelector("i");
-
-                    if (icon) {
-                        icon.className =
-                            "fa-solid fa-bars";
-                    }
 
                 }
 
             }
 
         }
-    );
+
+    }
+);
+
 
 </script>
 
 
-<!-- =============================================================
-     CHILD SCRIPTS
-     ============================================================= -->
+<!-- =========================================================
+     CHILD PAGE SCRIPTS
+     ========================================================= -->
 
 {% block scripts %}{% endblock %}
 
