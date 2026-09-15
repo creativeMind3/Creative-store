@@ -5,466 +5,677 @@
 {% block content %}
 
 <style>
-    .auth-page {
-        min-height: calc(100vh - 100px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 50px 20px;
-        background:
-            radial-gradient(circle at 10% 20%, rgba(109, 74, 255, .14), transparent 32%),
-            radial-gradient(circle at 90% 80%, rgba(109, 74, 255, .10), transparent 30%),
-            #f7f8fc;
+/* =========================================================
+   LOGIN PAGE
+   ========================================================= */
+
+.login-page {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 45px 20px;
+    background:
+        radial-gradient(circle at 10% 10%, rgba(109, 74, 255, .12), transparent 30%),
+        radial-gradient(circle at 90% 90%, rgba(109, 74, 255, .08), transparent 30%),
+        #f7f8fc;
+}
+
+.login-shell {
+    width: min(1050px, 100%);
+    min-height: 620px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+    background: #ffffff;
+    border-radius: 30px;
+    box-shadow: 0 25px 70px rgba(24, 22, 45, .14);
+    border: 1px solid rgba(0, 0, 0, .05);
+}
+
+/* =========================================================
+   BRAND PANEL
+   ========================================================= */
+
+.login-brand {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 55px;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 85% 15%, rgba(255,255,255,.18), transparent 25%),
+        radial-gradient(circle at 15% 85%, rgba(255,255,255,.12), transparent 30%),
+        linear-gradient(145deg, #17142b, #31215e 55%, #6d4aff);
+}
+
+.login-brand::before,
+.login-brand::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.login-brand::before {
+    width: 330px;
+    height: 330px;
+    right: -160px;
+    top: -120px;
+    border: 1px solid rgba(255,255,255,.15);
+    box-shadow:
+        0 0 0 45px rgba(255,255,255,.025),
+        0 0 0 90px rgba(255,255,255,.02);
+}
+
+.login-brand::after {
+    width: 230px;
+    height: 230px;
+    left: -130px;
+    bottom: -100px;
+    background: rgba(255,255,255,.05);
+}
+
+.brand-content,
+.brand-bottom {
+    position: relative;
+    z-index: 2;
+}
+
+.brand-logo {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 28px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.brand-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 18px;
+    padding: 8px 13px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.14);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.brand-badge i {
+    font-size: 9px;
+}
+
+.login-brand h1 {
+    margin: 0 0 18px;
+    max-width: 440px;
+    font-size: clamp(34px, 4vw, 54px);
+    line-height: 1.05;
+    letter-spacing: -1.8px;
+}
+
+.login-brand p {
+    max-width: 440px;
+    margin: 0;
+    color: rgba(255,255,255,.76);
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.brand-features {
+    display: grid;
+    gap: 12px;
+    margin-top: 35px;
+}
+
+.brand-feature {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255,255,255,.9);
+    font-size: 14px;
+}
+
+.brand-feature-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(255,255,255,.1);
+}
+
+.brand-bottom {
+    color: rgba(255,255,255,.55);
+    font-size: 12px;
+}
+
+/* =========================================================
+   FORM PANEL
+   ========================================================= */
+
+.login-form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 55px;
+    background: #ffffff;
+}
+
+.login-form-box {
+    width: min(430px, 100%);
+}
+
+.login-heading {
+    margin-bottom: 32px;
+}
+
+.login-heading .mini-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #6d4aff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.login-heading h2 {
+    margin: 0 0 10px;
+    color: #171525;
+    font-size: 36px;
+    line-height: 1.1;
+    letter-spacing: -1px;
+}
+
+.login-heading p {
+    margin: 0;
+    color: #7c7a89;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.login-form {
+    display: grid;
+    gap: 20px;
+}
+
+.form-group {
+    display: grid;
+    gap: 8px;
+}
+
+.form-label {
+    color: #292735;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.input-wrap {
+    position: relative;
+}
+
+.input-wrap i.input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+    color: #9693a3;
+    pointer-events: none;
+}
+
+.login-input {
+    width: 100%;
+    height: 54px;
+    padding: 0 48px 0 46px;
+    border: 1px solid #e4e2eb;
+    border-radius: 15px;
+    outline: none;
+    background: #fafafd;
+    color: #252332;
+    font-family: inherit;
+    font-size: 14px;
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+    box-sizing: border-box;
+}
+
+.login-input:hover {
+    border-color: #d3d0df;
+}
+
+.login-input:focus {
+    border-color: #6d4aff;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(109,74,255,.10);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    width: 38px;
+    height: 38px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #8e8b9a;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.password-toggle:hover {
+    background: #f0edff;
+    color: #6d4aff;
+}
+
+.password-toggle:active {
+    transform: translateY(-50%) scale(.94);
+}
+
+.password-toggle i {
+    pointer-events: none;
+}
+
+/* =========================================================
+   OPTIONS
+   ========================================================= */
+
+.login-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: -2px;
+}
+
+.remember-me {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #777483;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.remember-me input {
+    width: 15px;
+    height: 15px;
+    accent-color: #6d4aff;
+}
+
+.forgot-link {
+    color: #6d4aff;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   BUTTON
+   ========================================================= */
+
+.login-button {
+    position: relative;
+    width: 100%;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6d4aff, #5636db);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 14px 28px rgba(109,74,255,.24);
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease,
+        opacity .2s ease;
+}
+
+.login-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(109,74,255,.30);
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+.login-button.loading {
+    pointer-events: none;
+    opacity: .8;
+}
+
+.login-spinner {
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(255,255,255,.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: loginSpin .7s linear infinite;
+    display: none;
+}
+
+.login-button.loading .login-spinner {
+    display: block;
+}
+
+.login-button.loading .button-text {
+    opacity: .9;
+}
+
+@keyframes loginSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =========================================================
+   DIVIDER
+   ========================================================= */
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 25px 0;
+    color: #aaa7b4;
+    font-size: 11px;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #eceaf1;
+}
+
+/* =========================================================
+   REGISTER LINK
+   ========================================================= */
+
+.register-prompt {
+    text-align: center;
+    color: #777483;
+    font-size: 13px;
+}
+
+.register-prompt a {
+    color: #6d4aff;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.register-prompt a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SECURITY NOTE
+   ========================================================= */
+
+.security-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 22px;
+    color: #a09da9;
+    font-size: 11px;
+}
+
+.security-note i {
+    color: #6d4aff;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 850px) {
+    .login-shell {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+        min-height: auto;
     }
 
-    .auth-shell {
-        width: 100%;
-        max-width: 1050px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        background: #fff;
-        border-radius: 28px;
-        overflow: hidden;
-        box-shadow: 0 25px 70px rgba(20, 20, 40, .12);
-        border: 1px solid rgba(0,0,0,.05);
+    .login-brand {
+        min-height: 330px;
+        padding: 38px;
     }
 
-    /* LEFT */
-    .auth-showcase {
-        position: relative;
-        padding: 55px;
-        color: #fff;
-        min-height: 600px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        background:
-            radial-gradient(circle at 20% 15%, rgba(255,255,255,.15), transparent 25%),
-            linear-gradient(145deg, #171827, #30236d 55%, #6d4aff);
+    .login-brand h1 {
+        font-size: 36px;
     }
 
-    .showcase-glow {
-        position: absolute;
-        width: 220px;
-        height: 220px;
-        border-radius: 50%;
-        background: rgba(255,255,255,.08);
-        top: 80px;
-        right: -70px;
-        filter: blur(2px);
+    .brand-features {
+        display: none;
     }
 
-    .showcase-brand {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 800;
-        font-size: 18px;
+    .login-form-panel {
+        padding: 42px 30px 48px;
+    }
+}
+
+@media (max-width: 520px) {
+    .login-page {
+        min-height: calc(100vh - 60px);
+        padding: 18px 12px;
     }
 
-    .showcase-logo {
-        width: 44px;
-        height: 44px;
-        display: grid;
-        place-items: center;
-        border-radius: 14px;
-        background: rgba(255,255,255,.14);
-        border: 1px solid rgba(255,255,255,.18);
-        font-size: 20px;
+    .login-shell {
+        border-radius: 23px;
     }
 
-    .showcase-content {
-        position: relative;
-        z-index: 2;
+    .login-brand {
+        min-height: 270px;
+        padding: 28px 24px;
     }
 
-    .showcase-content .mini-label {
-        display: inline-flex;
-        padding: 7px 12px;
-        border-radius: 100px;
-        background: rgba(255,255,255,.12);
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        margin-bottom: 18px;
+    .brand-logo {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+        margin-bottom: 20px;
     }
 
-    .showcase-content h1 {
-        font-size: clamp(36px, 4vw, 58px);
-        line-height: 1.02;
-        margin: 0 0 20px;
-        letter-spacing: -1.8px;
-    }
-
-    .showcase-content p {
-        max-width: 430px;
-        line-height: 1.7;
-        color: rgba(255,255,255,.78);
-        margin: 0;
-    }
-
-    .showcase-points {
-        position: relative;
-        z-index: 2;
-        display: grid;
-        gap: 12px;
-    }
-
-    .showcase-point {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: rgba(255,255,255,.88);
-        font-size: 14px;
-    }
-
-    .showcase-point i {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: rgba(255,255,255,.12);
-        color: #fff;
-    }
-
-    /* RIGHT */
-    .auth-form-area {
-        padding: 55px;
-        display: flex;
-        align-items: center;
-    }
-
-    .auth-form-box {
-        width: 100%;
-        max-width: 430px;
-        margin: auto;
-    }
-
-    .auth-heading {
-        margin-bottom: 30px;
-    }
-
-    .auth-heading .eyebrow {
-        color: #6d4aff;
-        font-size: 12px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .1em;
-    }
-
-    .auth-heading h2 {
-        margin: 8px 0 8px;
-        font-size: 34px;
+    .login-brand h1 {
+        font-size: 30px;
         letter-spacing: -1px;
-        color: #171827;
     }
 
-    .auth-heading p {
-        margin: 0;
-        color: #7a7d8b;
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
+    .login-brand p {
         font-size: 13px;
-        font-weight: 700;
-        color: #30313d;
+        line-height: 1.65;
     }
 
-    .input-wrap {
-        position: relative;
+    .login-form-panel {
+        padding: 32px 22px 38px;
     }
 
-    .input-wrap > i.input-icon {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #9699a7;
-        pointer-events: none;
-        z-index: 2;
+    .login-heading h2 {
+        font-size: 30px;
     }
 
-    .auth-input {
-        width: 100%;
-        height: 54px;
-        border: 1px solid #e4e5eb;
-        border-radius: 14px;
-        background: #fafbfc;
-        padding: 0 48px;
-        outline: none;
-        font-size: 14px;
-        color: #22232d;
-        transition: .2s ease;
-        box-sizing: border-box;
+    .login-options {
+        align-items: flex-start;
     }
+}
 
-    .auth-input:focus {
-        background: #fff;
-        border-color: #6d4aff;
-        box-shadow: 0 0 0 4px rgba(109,74,255,.10);
-    }
-
-    /* PASSWORD BUTTON */
+@media (prefers-reduced-motion: reduce) {
+    .login-button,
+    .login-input,
     .password-toggle {
-        position: absolute;
-        right: 7px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 40px;
-        height: 40px;
-        border: 0;
-        border-radius: 10px;
-        background: transparent;
-        color: #858895;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        z-index: 5;
-        transition: .2s ease;
-        -webkit-tap-highlight-color: transparent;
+        transition: none;
     }
 
-    .password-toggle:hover {
-        background: #f0efff;
-        color: #6d4aff;
+    .login-spinner {
+        animation: none;
     }
-
-    .password-toggle:active {
-        transform: translateY(-50%) scale(.92);
-    }
-
-    .password-toggle i {
-        pointer-events: none;
-        font-size: 16px;
-    }
-
-    .auth-button {
-        width: 100%;
-        height: 55px;
-        border: 0;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #6d4aff, #5232d4);
-        color: #fff;
-        font-size: 15px;
-        font-weight: 800;
-        cursor: pointer;
-        box-shadow: 0 12px 25px rgba(109,74,255,.22);
-        transition: .2s ease;
-        margin-top: 8px;
-    }
-
-    .auth-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 16px 30px rgba(109,74,255,.28);
-    }
-
-    .auth-button:active {
-        transform: translateY(0);
-    }
-
-    .auth-button.loading {
-        opacity: .75;
-        pointer-events: none;
-    }
-
-    .auth-footer {
-        text-align: center;
-        margin-top: 24px;
-        font-size: 14px;
-        color: #7d7f8b;
-    }
-
-    .auth-footer a {
-        color: #6d4aff;
-        font-weight: 800;
-        text-decoration: none;
-    }
-
-    .auth-footer a:hover {
-        text-decoration: underline;
-    }
-
-    .security-note {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 7px;
-        margin-top: 20px;
-        font-size: 12px;
-        color: #999ba6;
-    }
-
-    .security-note i {
-        color: #35a66f;
-    }
-
-    /* ANIMATION */
-    .auth-shell {
-        animation: authAppear .55s ease both;
-    }
-
-    @keyframes authAppear {
-        from {
-            opacity: 0;
-            transform: translateY(18px) scale(.985);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    /* MOBILE */
-    @media (max-width: 800px) {
-        .auth-page {
-            padding: 25px 15px;
-        }
-
-        .auth-shell {
-            grid-template-columns: 1fr;
-            border-radius: 22px;
-        }
-
-        .auth-showcase {
-            min-height: auto;
-            padding: 30px;
-        }
-
-        .showcase-content {
-            margin: 55px 0 35px;
-        }
-
-        .showcase-content h1 {
-            font-size: 38px;
-        }
-
-        .auth-form-area {
-            padding: 35px 25px 40px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .auth-showcase {
-            padding: 25px;
-        }
-
-        .showcase-content {
-            margin-top: 40px;
-        }
-
-        .showcase-content h1 {
-            font-size: 34px;
-        }
-
-        .showcase-points {
-            gap: 9px;
-        }
-
-        .auth-form-area {
-            padding: 30px 20px 35px;
-        }
-
-        .auth-heading h2 {
-            font-size: 29px;
-        }
-    }
+}
 </style>
 
 
-<section class="auth-page">
+<section class="login-page">
 
-    <div class="auth-shell">
+    <div class="login-shell">
 
-        <!-- SHOWCASE -->
-        <div class="auth-showcase">
+        <!-- =================================================
+             LEFT BRAND AREA
+             ================================================= -->
 
-            <div class="showcase-glow"></div>
+        <div class="login-brand">
 
-            <div class="showcase-brand">
-                <div class="showcase-logo">
+            <div class="brand-content">
+
+                <div class="brand-logo">
                     {% if store.logo %}
                         <img
                             src="{{ url_for('uploaded_file', filename=store.logo) }}"
-                            alt="{{ store.store_name }}"
-                            style="width:100%;height:100%;object-fit:contain;border-radius:10px;"
+                            alt="{{ store.store_name }} logo"
                         >
                     {% else %}
-                        <i class="fa-solid fa-bag-shopping"></i>
+                        {{ (store.store_name or 'S')[:1]|upper }}
                     {% endif %}
                 </div>
 
-                <span>{{ store.store_name }}</span>
-            </div>
-
-            <div class="showcase-content">
-
-                <span class="mini-label">
+                <div class="brand-badge">
+                    <i class="fa-solid fa-circle"></i>
                     Welcome back
-                </span>
+                </div>
 
                 <h1>
-                    Shop smarter.<br>
-                    Live better.
+                    Shop smarter.
+                    Shop with confidence.
                 </h1>
 
                 <p>
-                    Sign in to manage your account, follow your orders,
-                    discover products and enjoy a smoother shopping experience.
+                    Sign in to your account to manage your orders,
+                    track purchases and enjoy a smoother shopping
+                    experience.
                 </p>
+
+                <div class="brand-features">
+
+                    <div class="brand-feature">
+                        <span class="brand-feature-icon">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </span>
+                        <span>Secure account access</span>
+                    </div>
+
+                    <div class="brand-feature">
+                        <span class="brand-feature-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </span>
+                        <span>Track your orders easily</span>
+                    </div>
+
+                    <div class="brand-feature">
+                        <span class="brand-feature-icon">
+                            <i class="fa-solid fa-bolt"></i>
+                        </span>
+                        <span>Fast and simple shopping</span>
+                    </div>
+
+                </div>
 
             </div>
 
-            <div class="showcase-points">
-
-                <div class="showcase-point">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Secure customer account</span>
-                </div>
-
-                <div class="showcase-point">
-                    <i class="fa-solid fa-box"></i>
-                    <span>Track your orders easily</span>
-                </div>
-
-                <div class="showcase-point">
-                    <i class="fa-solid fa-bolt"></i>
-                    <span>Fast and simple shopping</span>
-                </div>
-
+            <div class="brand-bottom">
+                © {{ store.store_name }} · Secure shopping experience
             </div>
 
         </div>
 
 
-        <!-- FORM -->
-        <div class="auth-form-area">
+        <!-- =================================================
+             LOGIN FORM
+             ================================================= -->
 
-            <div class="auth-form-box">
+        <div class="login-form-panel">
 
-                <div class="auth-heading">
-                    <span class="eyebrow">Account access</span>
+            <div class="login-form-box">
 
-                    <h2>Welcome back 👋</h2>
+                <div class="login-heading">
+
+                    <div class="mini-title">
+                        <i class="fa-solid fa-lock"></i>
+                        Account Login
+                    </div>
+
+                    <h2>
+                        Welcome back
+                    </h2>
 
                     <p>
-                        Enter your details below to continue shopping.
+                        Enter your details below to continue to your account.
                     </p>
+
                 </div>
 
 
-                <form method="POST" id="loginForm">
+                <form
+                    method="POST"
+                    action="{{ url_for('login') }}"
+                    class="login-form"
+                    id="loginForm"
+                    novalidate
+                >
+
+                    <!-- IMPORTANT:
+                         CSRF TOKEN FIXES THE BAD REQUEST ERROR -->
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
 
                     <input
                         type="hidden"
@@ -472,25 +683,30 @@
                         value="{{ next_url or '' }}"
                     >
 
+
+                    <!-- EMAIL -->
+
                     <div class="form-group">
 
-                        <label for="email">
+                        <label
+                            class="form-label"
+                            for="email"
+                        >
                             Email address
                         </label>
 
                         <div class="input-wrap">
 
-                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <i class="fa-regular fa-envelope input-icon"></i>
 
                             <input
-                                class="auth-input"
-                                type="email"
                                 id="email"
                                 name="email"
+                                type="email"
+                                class="login-input"
                                 placeholder="you@example.com"
                                 autocomplete="email"
                                 required
-                                autofocus
                             >
 
                         </div>
@@ -498,9 +714,14 @@
                     </div>
 
 
+                    <!-- PASSWORD -->
+
                     <div class="form-group">
 
-                        <label for="password">
+                        <label
+                            class="form-label"
+                            for="password"
+                        >
                             Password
                         </label>
 
@@ -509,10 +730,10 @@
                             <i class="fa-solid fa-lock input-icon"></i>
 
                             <input
-                                class="auth-input"
-                                type="password"
                                 id="password"
                                 name="password"
+                                type="password"
+                                class="login-input"
                                 placeholder="Enter your password"
                                 autocomplete="current-password"
                                 required
@@ -521,11 +742,14 @@
                             <button
                                 type="button"
                                 class="password-toggle"
-                                data-target="password"
+                                id="passwordToggle"
                                 aria-label="Show password"
-                                aria-pressed="false"
+                                title="Show password"
                             >
-                                <i class="fa-solid fa-eye"></i>
+                                <i
+                                    class="fa-regular fa-eye"
+                                    id="passwordIcon"
+                                ></i>
                             </button>
 
                         </div>
@@ -533,30 +757,57 @@
                     </div>
 
 
+                    <!-- OPTIONS -->
+
+                    <div class="login-options">
+
+                        <label class="remember-me">
+                            <input
+                                type="checkbox"
+                                id="remember"
+                            >
+                            <span>Remember me</span>
+                        </label>
+
+                    </div>
+
+
+                    <!-- LOGIN BUTTON -->
+
                     <button
                         type="submit"
-                        class="auth-button"
+                        class="login-button"
                         id="loginButton"
                     >
-                        <span class="button-text">
-                            Sign In
-                        </span>
 
                         <span
-                            class="button-loading"
-                            style="display:none;"
-                        >
-                            <i class="fa-solid fa-circle-notch fa-spin"></i>
-                            Signing in...
+                            class="login-spinner"
+                            aria-hidden="true"
+                        ></span>
+
+                        <span class="button-text">
+                            Sign in
                         </span>
+
+                        <i
+                            class="fa-solid fa-arrow-right"
+                            id="loginArrow"
+                        ></i>
+
                     </button>
 
                 </form>
 
 
-                <div class="auth-footer">
+                <div class="login-divider">
+                    OR
+                </div>
+
+
+                <div class="register-prompt">
 
                     Don't have an account?
+
                     <a href="{{ url_for('register') }}">
                         Create one
                     </a>
@@ -565,8 +816,11 @@
 
 
                 <div class="security-note">
+
                     <i class="fa-solid fa-shield-halved"></i>
-                    Your account information is protected.
+
+                    Your login information is securely protected.
+
                 </div>
 
             </div>
@@ -581,72 +835,140 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    /*
-     * Reliable password visibility toggle.
-     * Uses event listeners instead of inline onclick,
-     * so it remains responsive on mobile devices.
-     */
-    document.querySelectorAll(".password-toggle").forEach(function (button) {
+    /* =====================================================
+       PASSWORD SHOW / HIDE
+       ===================================================== */
 
-        button.addEventListener("click", function () {
+    const passwordInput =
+        document.getElementById("password");
 
-            const targetId = button.getAttribute("data-target");
-            const input = document.getElementById(targetId);
-            const icon = button.querySelector("i");
+    const passwordToggle =
+        document.getElementById("passwordToggle");
 
-            if (!input) return;
+    const passwordIcon =
+        document.getElementById("passwordIcon");
 
-            const isHidden = input.type === "password";
 
-            input.type = isHidden ? "text" : "password";
+    if (passwordInput && passwordToggle && passwordIcon) {
 
-            button.setAttribute(
-                "aria-label",
-                isHidden ? "Hide password" : "Show password"
-            );
+        passwordToggle.addEventListener("click", function () {
 
-            button.setAttribute(
-                "aria-pressed",
-                isHidden ? "true" : "false"
-            );
+            const isHidden =
+                passwordInput.type === "password";
 
-            icon.classList.toggle(
+            passwordInput.type =
+                isHidden ? "text" : "password";
+
+            passwordIcon.classList.toggle(
                 "fa-eye",
                 !isHidden
             );
 
-            icon.classList.toggle(
+            passwordIcon.classList.toggle(
                 "fa-eye-slash",
                 isHidden
             );
 
-            input.focus();
-        });
+            passwordToggle.setAttribute(
+                "aria-label",
+                isHidden
+                    ? "Hide password"
+                    : "Show password"
+            );
 
-    });
+            passwordToggle.setAttribute(
+                "title",
+                isHidden
+                    ? "Hide password"
+                    : "Show password"
+            );
 
-
-    /*
-     * Small loading animation after submitting.
-     */
-    const form = document.getElementById("loginForm");
-    const button = document.getElementById("loginButton");
-
-    if (form && button) {
-
-        form.addEventListener("submit", function () {
-
-            button.classList.add("loading");
-
-            const text = button.querySelector(".button-text");
-            const loading = button.querySelector(".button-loading");
-
-            if (text) text.style.display = "none";
-            if (loading) loading.style.display = "inline-flex";
+            passwordInput.focus();
 
         });
 
     }
+
+
+    /* =====================================================
+       LOGIN LOADING STATE
+       ===================================================== */
+
+    const loginForm =
+        document.getElementById("loginForm");
+
+    const loginButton =
+        document.getElementById("loginButton");
+
+    const loginArrow =
+        document.getElementById("loginArrow");
+
+
+    if (loginForm && loginButton) {
+
+        loginForm.addEventListener("submit", function (event) {
+
+            const email =
+                document.getElementById("email");
+
+            const password =
+                document.getElementById("password");
+
+
+            if (!email.value.trim() || !password.value) {
+                return;
+            }
+
+
+            loginButton.classList.add("loading");
+
+            loginButton.disabled = true;
+
+            if (loginArrow) {
+                loginArrow.style.display = "none";
+            }
+
+        });
+
+    }
+
+
+    /* =====================================================
+       INPUT FOCUS ANIMATION
+       ===================================================== */
+
+    document
+        .querySelectorAll(".login-input")
+        .forEach(function (input) {
+
+            input.addEventListener("focus", function () {
+
+                const icon =
+                    this.parentElement.querySelector(
+                        ".input-icon"
+                    );
+
+                if (icon) {
+                    icon.style.color = "#6d4aff";
+                }
+
+            });
+
+
+            input.addEventListener("blur", function () {
+
+                const icon =
+                    this.parentElement.querySelector(
+                        ".input-icon"
+                    );
+
+                if (icon) {
+                    icon.style.color = "";
+                }
+
+            });
+
+        });
 
 });
 </script>
